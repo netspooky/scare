@@ -71,3 +71,13 @@ movq xmm4, rax
 movaps xmm5, xmm4
 ```
 
+# Gallery
+
+<img width="612" alt="loading and running a program" src="https://user-images.githubusercontent.com/26436276/223932643-a035c4c3-8e68-4df8-be47-4b020130e120.png">
+
+<img width="552" alt="going back in the program" src="https://user-images.githubusercontent.com/26436276/223932690-088c8f3f-4ea0-49e7-88bf-ddb0c1d1e076.png">
+
+<img width="650" alt="using config options" src="https://user-images.githubusercontent.com/26436276/223932702-83e8e84e-8a96-4da9-8b56-32aa76bae1c5.png">
+
+
+
