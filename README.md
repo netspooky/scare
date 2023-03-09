@@ -73,7 +73,6 @@ movaps xmm5, xmm4
 
 # Gallery
 
-<img width="930" alt="screenshot of using scare" src="https://user-images.githubusercontent.com/26436276/223963337-b018740d-d1ac-4344-b664-a9ed5756f2f3.png">
-
+<img width="930" alt="screenshot of a terminal using the tool" src="https://user-images.githubusercontent.com/26436276/223965913-5661081e-b078-4042-ae48-d8fc50452a30.png">
 
 
