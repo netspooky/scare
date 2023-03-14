@@ -4,6 +4,7 @@ from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
 from keystone import *
+import readline
 import time
 import sys
 
