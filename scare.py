@@ -6,6 +6,7 @@ from unicorn.x86_const import *
 from keystone import *
 import time
 import sys
+import capstone
 
 splash = """\x1b[38;5;213m\
 ┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐\x1b[38;5;219m
@@ -13,7 +14,7 @@ splash = """\x1b[38;5;213m\
 │      ││       │      ││       │──────┘\x1b[38;5;231m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.1.0]
+                [v0.1.1]
 
 Type / for help
 """
@@ -78,10 +79,10 @@ def dHex(inBytes,baddr):
         bAsc = ""
         bChunk = inBytes[offs:offs+16]
         for b in bChunk:
-            bAsc += chr(b) if chr(b).isprintable() else '.'
-            bHex += "{:02X} ".format(b)
+            bAsc += chr(b) if chr(b).isprintable() and b < 0x7f else '.'
+            bHex += "{:02x} ".format(b)
         sp = " "*(48-len(bHex))
-        print("{:08X}: {}{} {}".format(baddr + offs, bHex, sp, bAsc))
+        print("{:08x}: {}{} {}".format(baddr + offs, bHex, sp, bAsc))
         offs = offs + 16
 
 def ksAssemble(CODE):
@@ -317,6 +318,14 @@ def parseCmd(cmd, mu):
                 saveOutput(asmLines,cmdTok[1])
             else:
                 print("Please specify a filename!")
+            return CmdContinue
+        if cmdTok[0] == "/dis":
+            if cmdTokLen == 3:
+                #disAsm(asmAssembled,int(cmdTok[1],16))
+                asmAssembledDis = mu.mem_read(int(cmdTok[1],16), int(cmdTok[2]))
+                disassembler = capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64)
+                for insn in disassembler.disasm(asmAssembledDis, int(cmdTok[1],16)):
+                    print("0x%x:\t%s\t%s" % (insn.address, insn.mnemonic, insn.op_str))
             return CmdContinue
         if cmdTok[0] == "/load":
             if cmdTokLen > 1:
