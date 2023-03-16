@@ -1,5 +1,7 @@
 # scare
 
+I haven't properly shared this yet because it's not finished. It's here for testing purposes. Use at your own risk.
+
 This is a little assembly repl and emulator for fun. The primary usecase is to enable you to quickly see what some assembly code does. It's not meant to be a serious emulation solution.
 
 Currently only targeting x64, planning to add more architectures (mainly arm and riscv). This version is probably buggy and has a bunch of edge cases to address.
