@@ -49,6 +49,10 @@ cRegN = "\x1b[38;5;50m"  # Color for register names
 cEnd  = "\x1b[0m"        # For the end of lines
 cSPtr = "\x1b[38;5;226m" # Stack Pointer Color
 cIP   = "\x1b[38;5;219m" # Instruction Pointer color
+# Listing Colors
+cLnNum = "\x1b[48;5;55m"
+cLnPipe = "\x1b[38;5;196m"
+cAsmList = "\x1b[38;5;51m"
 
 def configPrint(sConfig):
     print("Current Config Options")
@@ -179,7 +183,7 @@ def printListing(ks_arch_name,asmInput,addr):
             assembledAsmLen = 0
         asmBytes = asmAssembled[codeOffs:codeOffs+assembledAsmLen]
         spacing = " "*(lineMax - len(i))
-        print(f"{lineNum:02d}│ \x1b[38;5;158m{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
+        print(f"{cLnNum}{lineNum:03d}{cEnd}{cLnPipe}│{cEnd} {cAsmList}{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
         addr = addr+assembledAsmLen
         codeOffs = codeOffs+assembledAsmLen
         lineNum = lineNum + 1
