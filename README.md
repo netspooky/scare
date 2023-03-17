@@ -20,28 +20,33 @@ Run: `python3 scare.py`
 Help file
 ```
 [x64]400000> /
-scare help
 
-USAGE
+Help File
 
-Type assembly code into the repl, line by line.
+/ /? /help                        -- Open help menu
+/x /exit /q /quit                 -- Quit the program
+/info                             -- Info about the emulator state
+/l /list                          -- List the current program
+/run                              -- Run the current program
+/reset                            -- Reset the emulator to a clean state
+/back n                           -- Go back n number of lines
+/load file.asm                    -- Load listing from file.asm (overwrites current program)
+/save file.asm                    -- Save assembly output to file.asm
+/export FILETYPE FILENAME         -- Export machine code as FILETYPE to the FILENAME
+                                     FILETYPE List:
+                                     - bin
+                                     - elf64
+                                     - pe32
+/read {0xaddress|$register} NUM   -- Read NUM bytes from 0xaddress or $register
+/dis {0xaddress|$register} NUM    -- Disassemble NUM bytes from 0xaddress or $register
 
-COMMANDS
+Config Commands (Use /c or /config)
+NOTE: Run /reset if you are changing emu/* options, otherwise the emulator may not start!
 
-/ /? /help           -- Open help menu
-/x /exit /q /quit    -- Quit the program
-/l /list             -- List the current program
-/back n              -- Go back n number of lines
-/save file.asm       -- Save current listing to file
-/load file.asm       -- Load listing from file (overwrites current program)
-/run                 -- Runs the program
-/read 0xaddress size -- Read (size) amount of bytes from (0xaddress) [EXPERIMENTAL]
-
-CONFIG
-
-/c or /config  -- Show configurable options
-/c OPTION on   -- Turn config option on
-/c OPTION off  -- Turn config option off
+/c               -- Print all config options
+/c emu/arch      -- Print Arch Value
+/c emu/arch x64  -- Set Arch to x64
+/c x86/xmm 1     -- Enable x86/xmm
 ```
 
 Going backwards in the assembly listing
