@@ -255,7 +255,7 @@ rNames = {
         "r13": UC_X86_REG_R13,
         "r14": UC_X86_REG_R14,
         "r15": UC_X86_REG_R15,
-        "rflags": UC_X86_REG_RFLAGS,
+        "rflags": UC_X86_REG_EFLAGS,
     },
     "xmm": {
         "xmm0":  UC_X86_REG_XMM0,
