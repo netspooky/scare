@@ -90,7 +90,7 @@ def saveAsm(inCode, fname):
     print(f"Saved {fname}")
 
 # exportBin - Export binary to a file
-def exportBin(inCode, fileType, fileArch, fname):
+def exportBin(inCode, fileType, fArch, fname):
     if fileType == "bin":
         outBin = inCode
     elif fileType == "elf64":
