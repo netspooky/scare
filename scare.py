@@ -19,7 +19,7 @@ parser.add_argument('--base', type=lambda x: int(x,0), dest='baseaddr', help='Ba
 parser.add_argument('--stack', type=lambda x: int(x,0), dest='stackaddr', help='Stack Address (default: 0x401000)')
 parser.add_argument('--memsize', dest='memsize', help='Emulator Memory Size (default: 0x200000 [2MB])')
 
-supportedArches = ["arm64", "x64"]
+supportedArches = ["arm64", "x64", "x86"]
 
 sConfig = {
     "emu/baseaddr" : 0x400000,
@@ -40,6 +40,11 @@ class scaremu:
             self.mode = UC_MODE_64
             self.stack_reg = UC_X86_REG_RSP
             self.ip_reg = UC_X86_REG_RIP
+        elif self.arch_name == "x86":
+            self.arch = UC_ARCH_X86
+            self.mode = UC_MODE_32
+            self.stack_reg = UC_X86_REG_ESP
+            self.ip_reg = UC_X86_REG_EIP
         elif self.arch_name == "arm64":
             self.arch = UC_ARCH_ARM64
             self.mode = UC_MODE_ARM
@@ -59,6 +64,8 @@ class scaremu:
         try:
             if self.arch_name == "x64":
                 ks = Ks(KS_ARCH_X86, KS_MODE_64)
+            elif self.arch_name == "x86":
+                ks = Ks(KS_ARCH_X86, KS_MODE_32)
             elif self.arch_name == "arm64":
                 ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
             else:
@@ -117,6 +124,9 @@ class scaremu:
         if self.arch_name == "x64":
             csArch = capstone.CS_ARCH_X86
             csMode = capstone.CS_MODE_64
+        elif self.arch_name == "x64":
+            csArch = capstone.CS_ARCH_X86
+            csMode = capstone.CS_MODE_32
         elif self.arch_name == "arm64":
             csArch = capstone.CS_ARCH_ARM64
             csMode = capstone.CS_MODE_ARM
