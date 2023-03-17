@@ -74,7 +74,7 @@ Using config options
 
 ```
 not rax
-/config x86 xmm on
+/c x86/xmm 1
 movq xmm4, rax
 movaps xmm5, xmm4
 ```
