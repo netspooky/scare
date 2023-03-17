@@ -140,6 +140,8 @@ def ksAssemble(ks_arch_name, CODE):
     try:
         if ks_arch_name == "x64":
             ks = Ks(KS_ARCH_X86, KS_MODE_64)
+        elif ks_arch_name == "x86":
+            ks = Ks(KS_ARCH_X86, KS_MODE_32)
         elif ks_arch_name == "arm64":
             ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
         else:
