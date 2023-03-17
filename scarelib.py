@@ -20,6 +20,7 @@ Help File
 / /? /help                        -- Open help menu
 /x /exit /q /quit                 -- Quit the program
 /info                             -- Info about the emulator state
+/l /list                          -- List the current program
 /run                              -- Run the current program
 /reset                            -- Reset the emulator to a clean state
 /back n                           -- Go back n number of lines
