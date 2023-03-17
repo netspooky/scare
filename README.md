@@ -112,8 +112,11 @@ movaps xmm5, xmm4
 # Gallery
 
 Decoding shellcode:
-![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/225798291-dac2741c-d553-4b4f-82ec-b1a680a16436.png)
+
+![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/225850688-e885a004-430a-493f-9247-ce0807eb9040.png)
 
 Exporting code to an elf64 and running it:
-![screenshot of exporting code and running as an elf64](https://user-images.githubusercontent.com/26436276/225799927-110fb23c-e776-43b7-8951-dd23f7361816.png)
+
+![screenshot of exporting code and running as an elf64](https://user-images.githubusercontent.com/26436276/225850777-88ab3008-e002-49ca-95f9-1b0fe99a2563.png)
+
 
