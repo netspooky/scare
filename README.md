@@ -110,5 +110,9 @@ movaps xmm5, xmm4
 
 # Gallery
 
+Decoding shellcode:
 ![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/225798291-dac2741c-d553-4b4f-82ec-b1a680a16436.png)
+
+Exporting code to an elf64 and running it:
+![screenshot of exporting code and running as an elf64](https://user-images.githubusercontent.com/26436276/225799927-110fb23c-e776-43b7-8951-dd23f7361816.png)
 
