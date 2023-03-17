@@ -11,7 +11,7 @@ splash = """\x1b[38;5;213m\
 │      ││       │      ││       │──────┘\x1b[38;5;231m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.2.0]
+                [v0.2.1]
 """
 
 helpfile = """
@@ -219,6 +219,18 @@ rNames = {
         "sp":  UC_ARM64_REG_SP,
         "pc":  UC_ARM64_REG_PC,
     },
+    "x86": {
+        "eax": UC_X86_REG_EAX,
+        "ebx": UC_X86_REG_EBX,
+        "ecx": UC_X86_REG_ECX,
+        "edx": UC_X86_REG_EDX,
+        "esi": UC_X86_REG_ESI,
+        "edi": UC_X86_REG_EDI,
+        "eip": UC_X86_REG_EIP,
+        "esp": UC_X86_REG_ESP,
+        "ebp": UC_X86_REG_EBP,
+        "eflags": UC_X86_REG_EFLAGS,
+    },
     "x64": {
         "rax": UC_X86_REG_RAX,
         "rbx": UC_X86_REG_RBX,
@@ -237,7 +249,7 @@ rNames = {
         "r13": UC_X86_REG_R13,
         "r14": UC_X86_REG_R14,
         "r15": UC_X86_REG_R15,
-        "eflags": UC_X86_REG_EFLAGS,
+        "rflags": UC_X86_REG_RFLAGS,
     },
     "xmm": {
         "xmm0":  UC_X86_REG_XMM0,
@@ -282,6 +294,8 @@ rNames = {
 def printRegsHandler(mu, archname, sConfig):
     if archname == "x64":
         printRegs_x64(mu, sConfig)
+    elif archname == "x86":
+        printRegs_x86(mu, sConfig)
     elif archname == "arm64":
         printRegs_arm64(mu, sConfig)
     else:
@@ -336,29 +350,46 @@ def printRegs_arm64(mu, sConfig):
     print(f"{cRegN}x10: {regFmt(mu,0,64,rNames['arm64']['x10'])} {cRegN}x20: {regFmt(mu,0,64,rNames['arm64']['x20'])} {cRegN}x30: {regFmt(mu,0,64,rNames['arm64']['x30'])}")
     print(cEnd,end="")
 
+def printRegs_XMM(mu, sConfig):
+    print(f"{cRegN} xmm0: {regFmt(mu,0,128,rNames['xmm']['xmm0'] )} {cRegN}xmm16: {regFmt(mu,0,128,rNames['xmm']['xmm16'])}")
+    print(f"{cRegN} xmm1: {regFmt(mu,0,128,rNames['xmm']['xmm1'] )} {cRegN}xmm17: {regFmt(mu,0,128,rNames['xmm']['xmm17'])}")
+    print(f"{cRegN} xmm2: {regFmt(mu,0,128,rNames['xmm']['xmm2'] )} {cRegN}xmm18: {regFmt(mu,0,128,rNames['xmm']['xmm18'])}")
+    print(f"{cRegN} xmm3: {regFmt(mu,0,128,rNames['xmm']['xmm3'] )} {cRegN}xmm19: {regFmt(mu,0,128,rNames['xmm']['xmm19'])}")
+    print(f"{cRegN} xmm4: {regFmt(mu,0,128,rNames['xmm']['xmm4'] )} {cRegN}xmm20: {regFmt(mu,0,128,rNames['xmm']['xmm20'])}")
+    print(f"{cRegN} xmm5: {regFmt(mu,0,128,rNames['xmm']['xmm5'] )} {cRegN}xmm21: {regFmt(mu,0,128,rNames['xmm']['xmm21'])}")
+    print(f"{cRegN} xmm6: {regFmt(mu,0,128,rNames['xmm']['xmm6'] )} {cRegN}xmm22: {regFmt(mu,0,128,rNames['xmm']['xmm22'])}")
+    print(f"{cRegN} xmm7: {regFmt(mu,0,128,rNames['xmm']['xmm7'] )} {cRegN}xmm23: {regFmt(mu,0,128,rNames['xmm']['xmm23'])}")
+    print(f"{cRegN} xmm8: {regFmt(mu,0,128,rNames['xmm']['xmm8'] )} {cRegN}xmm24: {regFmt(mu,0,128,rNames['xmm']['xmm24'])}")
+    print(f"{cRegN} xmm9: {regFmt(mu,0,128,rNames['xmm']['xmm9'] )} {cRegN}xmm25: {regFmt(mu,0,128,rNames['xmm']['xmm25'])}")
+    print(f"{cRegN}xmm10: {regFmt(mu,0,128,rNames['xmm']['xmm10'])} {cRegN}xmm26: {regFmt(mu,0,128,rNames['xmm']['xmm26'])}")
+    print(f"{cRegN}xmm11: {regFmt(mu,0,128,rNames['xmm']['xmm11'])} {cRegN}xmm27: {regFmt(mu,0,128,rNames['xmm']['xmm27'])}")
+    print(f"{cRegN}xmm12: {regFmt(mu,0,128,rNames['xmm']['xmm12'])} {cRegN}xmm28: {regFmt(mu,0,128,rNames['xmm']['xmm28'])}")
+    print(f"{cRegN}xmm13: {regFmt(mu,0,128,rNames['xmm']['xmm13'])} {cRegN}xmm29: {regFmt(mu,0,128,rNames['xmm']['xmm29'])}")
+    print(f"{cRegN}xmm14: {regFmt(mu,0,128,rNames['xmm']['xmm14'])} {cRegN}xmm30: {regFmt(mu,0,128,rNames['xmm']['xmm30'])}")
+    print(f"{cRegN}xmm15: {regFmt(mu,0,128,rNames['xmm']['xmm15'])} {cRegN}xmm31: {regFmt(mu,0,128,rNames['xmm']['xmm31'])}")
+
 def printRegs_x64(mu, sConfig):
     print(f"{cRegN}rax: {regFmt(mu,0,64,rNames['x64']['rax'])} {cRegN}rip: {regFmt(mu,1,64,rNames['x64']['rip'])} {cRegN}r11: {regFmt(mu,0,64,rNames['x64']['r11'])}")
     print(f"{cRegN}rbx: {regFmt(mu,0,64,rNames['x64']['rbx'])} {cRegN}rsp: {regFmt(mu,2,64,rNames['x64']['rsp'])} {cRegN}r12: {regFmt(mu,0,64,rNames['x64']['r12'])}")
     print(f"{cRegN}rcx: {regFmt(mu,0,64,rNames['x64']['rcx'])} {cRegN}rbp: {regFmt(mu,0,64,rNames['x64']['rbp'])} {cRegN}r13: {regFmt(mu,0,64,rNames['x64']['r13'])}")
     print(f"{cRegN}rdx: {regFmt(mu,0,64,rNames['x64']['rdx'])} {cRegN} r8: {regFmt(mu,0,64,rNames['x64']['r8'] )} {cRegN}r14: {regFmt(mu,0,64,rNames['x64']['r14'])}")
     print(f"{cRegN}rsi: {regFmt(mu,0,64,rNames['x64']['rsi'])} {cRegN} r9: {regFmt(mu,0,64,rNames['x64']['r9'] )} {cRegN}r15: {regFmt(mu,0,64,rNames['x64']['r15'])}")
-    print(f"{cRegN}rdi: {regFmt(mu,0,64,rNames['x64']['rdi'])} {cRegN}r10: {regFmt(mu,0,64,rNames['x64']['r10'])} {cRegN}flg: {regFmt(mu,0,64,rNames['x64']['eflags'])}")
+    print(f"{cRegN}rdi: {regFmt(mu,0,64,rNames['x64']['rdi'])} {cRegN}r10: {regFmt(mu,0,64,rNames['x64']['r10'])} {cRegN}rfl: {regFmt(mu,0,64,rNames['x64']['rflags'])}")
     print(cEnd,end="")
     if sConfig["x86/xmm"]:
-        print(f"{cRegN} xmm0: {regFmt(mu,0,128,rNames['xmm']['xmm0'] )} {cRegN}xmm16: {regFmt(mu,0,128,rNames['xmm']['xmm16'])}")
-        print(f"{cRegN} xmm1: {regFmt(mu,0,128,rNames['xmm']['xmm1'] )} {cRegN}xmm17: {regFmt(mu,0,128,rNames['xmm']['xmm17'])}")
-        print(f"{cRegN} xmm2: {regFmt(mu,0,128,rNames['xmm']['xmm2'] )} {cRegN}xmm18: {regFmt(mu,0,128,rNames['xmm']['xmm18'])}")
-        print(f"{cRegN} xmm3: {regFmt(mu,0,128,rNames['xmm']['xmm3'] )} {cRegN}xmm19: {regFmt(mu,0,128,rNames['xmm']['xmm19'])}")
-        print(f"{cRegN} xmm4: {regFmt(mu,0,128,rNames['xmm']['xmm4'] )} {cRegN}xmm20: {regFmt(mu,0,128,rNames['xmm']['xmm20'])}")
-        print(f"{cRegN} xmm5: {regFmt(mu,0,128,rNames['xmm']['xmm5'] )} {cRegN}xmm21: {regFmt(mu,0,128,rNames['xmm']['xmm21'])}")
-        print(f"{cRegN} xmm6: {regFmt(mu,0,128,rNames['xmm']['xmm6'] )} {cRegN}xmm22: {regFmt(mu,0,128,rNames['xmm']['xmm22'])}")
-        print(f"{cRegN} xmm7: {regFmt(mu,0,128,rNames['xmm']['xmm7'] )} {cRegN}xmm23: {regFmt(mu,0,128,rNames['xmm']['xmm23'])}")
-        print(f"{cRegN} xmm8: {regFmt(mu,0,128,rNames['xmm']['xmm8'] )} {cRegN}xmm24: {regFmt(mu,0,128,rNames['xmm']['xmm24'])}")
-        print(f"{cRegN} xmm9: {regFmt(mu,0,128,rNames['xmm']['xmm9'] )} {cRegN}xmm25: {regFmt(mu,0,128,rNames['xmm']['xmm25'])}")
-        print(f"{cRegN}xmm10: {regFmt(mu,0,128,rNames['xmm']['xmm10'])} {cRegN}xmm26: {regFmt(mu,0,128,rNames['xmm']['xmm26'])}")
-        print(f"{cRegN}xmm11: {regFmt(mu,0,128,rNames['xmm']['xmm11'])} {cRegN}xmm27: {regFmt(mu,0,128,rNames['xmm']['xmm27'])}")
-        print(f"{cRegN}xmm12: {regFmt(mu,0,128,rNames['xmm']['xmm12'])} {cRegN}xmm28: {regFmt(mu,0,128,rNames['xmm']['xmm28'])}")
-        print(f"{cRegN}xmm13: {regFmt(mu,0,128,rNames['xmm']['xmm13'])} {cRegN}xmm29: {regFmt(mu,0,128,rNames['xmm']['xmm29'])}")
-        print(f"{cRegN}xmm14: {regFmt(mu,0,128,rNames['xmm']['xmm14'])} {cRegN}xmm30: {regFmt(mu,0,128,rNames['xmm']['xmm30'])}")
-        print(f"{cRegN}xmm15: {regFmt(mu,0,128,rNames['xmm']['xmm15'])} {cRegN}xmm31: {regFmt(mu,0,128,rNames['xmm']['xmm31'])}")
+        printRegs_XMM(mu, sConfig)
 
+def printRegs_x86(mu, sConfig):
+    print(f"{cRegN}eax: {regFmt(mu,0,32,rNames['x86']['eax'])}")
+    print(f"{cRegN}ecx: {regFmt(mu,0,32,rNames['x86']['ecx'])}")
+    print(f"{cRegN}edx: {regFmt(mu,0,32,rNames['x86']['edx'])}")
+    print(f"{cRegN}ebx: {regFmt(mu,0,32,rNames['x86']['ebx'])}")
+    print(f"{cRegN}esp: {regFmt(mu,2,32,rNames['x86']['esp'])}")
+    print(f"{cRegN}ebp: {regFmt(mu,0,32,rNames['x86']['ebp'])}")
+    print(f"{cRegN}esi: {regFmt(mu,0,32,rNames['x86']['esi'])}")
+    print(f"{cRegN}edi: {regFmt(mu,0,32,rNames['x86']['edi'])}")
+    print(f"{cRegN}eip: {regFmt(mu,1,32,rNames['x86']['eip'])}")
+    print(f"{cRegN}efl: {regFmt(mu,0,32,rNames['x86']['eflags'])}")
+    print(cEnd,end="")
+    if sConfig["x86/xmm"]:
+        printRegs_XMM(mu, sConfig)
