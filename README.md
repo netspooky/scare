@@ -5,6 +5,7 @@ I haven't properly shared this yet because it's not finished. It's here for test
 This is a little assembly repl and emulator for fun. The primary usecase is to enable you to quickly see what some assembly code does. It's not meant to be a serious emulation solution.
 
 Currently Supported Architectures
+- x86
 - x64
 - arm64
 
@@ -24,7 +25,7 @@ Command line flags
 │      ││       │      ││       │──────┘
 └──────┘└──────┘└──────┘└       └──────┘
 Simple Configurable Asm REPL && Emulator
-                [v0.2.0]
+                [v0.2.1]
 
 usage: scare.py [-h] [-a ARCH] [-f INFILE] [--base BASEADDR] [--stack STACKADDR]
                 [--memsize MEMSIZE]
