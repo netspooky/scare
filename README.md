@@ -15,7 +15,27 @@ Requirements
 
 # Usage
 
-Run: `python3 scare.py`
+Command line flags
+```
+～ python3 scare.py -h
+┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐
+└──────┐│       ┌──────││       │      │
+│      ││       │      ││       │──────┘
+└──────┘└──────┘└──────┘└       └──────┘
+Simple Configurable Asm REPL && Emulator
+                [v0.2.0]
+
+usage: scare.py [-h] [-a ARCH] [-f INFILE] [--base BASEADDR] [--stack STACKADDR]
+                [--memsize MEMSIZE]
+
+options:
+  -h, --help         show this help message and exit
+  -a ARCH            Target architecture
+  -f INFILE          File to read
+  --base BASEADDR    Base Address (default: 0x400000)
+  --stack STACKADDR  Stack Address (default: 0x401000)
+  --memsize MEMSIZE  Emulator Memory Size (default: 0x200000 [2MB])
+```
 
 Help file
 ```
