@@ -3,388 +3,351 @@
 from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
+from unicorn.arm64_const import *
 from keystone import *
-import readline
+import capstone
 import time
 import sys
-import capstone
+import readline
+import argparse
+import scarelib
 
-splash = """\x1b[38;5;213m\
-┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐\x1b[38;5;219m
-└──────┐│       ┌──────││       │      │\x1b[38;5;225m
-│      ││       │      ││       │──────┘\x1b[38;5;231m
-└──────┘└──────┘└──────┘└       └──────┘\x1b[0m
-Simple Configurable Asm REPL && Emulator 
-                [v0.1.1]
+parser = argparse.ArgumentParser(description="")
+parser.add_argument('-a', dest='arch', help='Target architecture')
+parser.add_argument('-f', dest='inFile', help='File to read')
+parser.add_argument('--base', type=lambda x: int(x,0), dest='baseaddr', help='Base Address (default: 0x400000)')
+parser.add_argument('--stack', type=lambda x: int(x,0), dest='stackaddr', help='Stack Address (default: 0x401000)')
+parser.add_argument('--memsize', dest='memsize', help='Emulator Memory Size (default: 0x200000 [2MB])')
 
-Type / for help
-"""
-
-helpfile = """scare help
-
-USAGE
-
-Type assembly code into the repl, line by line.
-
-COMMANDS
-
-/ /? /help           -- Open help menu
-/x /exit /q /quit    -- Quit the program
-/l /list             -- List the current program
-/back n              -- Go back n number of lines
-/save file.asm       -- Save current listing to file
-/load file.asm       -- Load listing from file (overwrites current program)
-/run                 -- Runs the program
-/read 0xaddress size -- Read (size) amount of bytes from (0xaddress) [EXPERIMENTAL]
-
-CONFIG
-
-/c or /config  -- Show configurable options
-/c OPTION on   -- Turn config option on
-/c OPTION off  -- Turn config option off
-"""
+supportedArches = ["arm64", "x64"]
 
 sConfig = {
-    "emu" : {
-        "baseaddr": 0x400000,
-        "stackaddr": 0x401000,
-    },
-    "x86": {
-        #"debug": False, # Debug registers, not supported yet
-        "xmm": False,
-        #"ymm": False, # Not supported yet
-        #"zmm": False, # Not supported yet
-    }
+    "emu/baseaddr" : 0x400000,
+    "emu/stackaddr": 0x401000,
+    "emu/memsize":   0x200000,
+    "emu/arch" : "NoArch",
+    "x86/xmm": 0,
 }
 
-regColor   = "\x1b[38;5;189m"
-emptyColor = "\x1b[38;5;244m"
-regnColor  = "\x1b[38;5;50m"
-
-regz = {} # Structure to hold all the register states here and return them.
-asmLines = [] # Holds all the lines of assembly
-baseaddr = sConfig["emu"]["baseaddr"]
-addr = baseaddr
-running = 0 # Track when the emulator has run
-## Commands
-quitcmds = ["/exit", "/x", "/quit", "/q"]
-listcmds = ["/list", "/l"]
-configcmds = ["/config", "/c"]
-helpcmds = ["/", "/help", "/?", "/h"]
-CmdContinue = "!!C"
-
-def dHex(inBytes,baddr):
-    offs = 0
-    while offs < len(inBytes):
-        bHex = ""
-        bAsc = ""
-        bChunk = inBytes[offs:offs+16]
-        for b in bChunk:
-            bAsc += chr(b) if chr(b).isprintable() and b < 0x7f else '.'
-            bHex += "{:02x} ".format(b)
-        sp = " "*(48-len(bHex))
-        print("{:08x}: {}{} {}".format(baddr + offs, bHex, sp, bAsc))
-        offs = offs + 16
-
-def ksAssemble(CODE):
-    try:
-        ks = Ks(KS_ARCH_X86, KS_MODE_64)
-        mc, num = ks.asm(CODE)
-        return bytes(mc)
-
-    except KsError as e:
-        eChk = f"{e}"
-        if "KS_ERR_ASM_SYMBOL_REDEFINED" in eChk:
-            return # Returning because this will happen if a label is appended
+class scaremu:
+    def __init__(self, mu_arch):
+        self.arch = 255
+        self.mode = 255
+        self.stack_reg = 255
+        self.arch_name = mu_arch.lower()
+        if self.arch_name == "x64":
+            self.arch = UC_ARCH_X86
+            self.mode = UC_MODE_64
+            self.stack_reg = UC_X86_REG_RSP
+            self.ip_reg = UC_X86_REG_RIP
+        elif self.arch_name == "arm64":
+            self.arch = UC_ARCH_ARM64
+            self.mode = UC_MODE_ARM
+            self.stack_reg = UC_ARM64_REG_SP
+            self.ip_reg = UC_ARM64_REG_PC
         else:
-            print("ERROR: %s" %e)
+            print("Unsupported Arch")
             return
-
-def printXMM(mu):
-    regz["xmm0"]  = mu.reg_read(UC_X86_REG_XMM0)
-    regz["xmm1"]  = mu.reg_read(UC_X86_REG_XMM1)
-    regz["xmm2"]  = mu.reg_read(UC_X86_REG_XMM2)
-    regz["xmm3"]  = mu.reg_read(UC_X86_REG_XMM3)
-    regz["xmm4"]  = mu.reg_read(UC_X86_REG_XMM4)
-    regz["xmm5"]  = mu.reg_read(UC_X86_REG_XMM5)
-    regz["xmm6"]  = mu.reg_read(UC_X86_REG_XMM6)
-    regz["xmm7"]  = mu.reg_read(UC_X86_REG_XMM7)
-    regz["xmm8"]  = mu.reg_read(UC_X86_REG_XMM8)
-    regz["xmm9"]  = mu.reg_read(UC_X86_REG_XMM9)
-    regz["xmm10"] = mu.reg_read(UC_X86_REG_XMM10)
-    regz["xmm11"] = mu.reg_read(UC_X86_REG_XMM11)
-    regz["xmm12"] = mu.reg_read(UC_X86_REG_XMM12)
-    regz["xmm13"] = mu.reg_read(UC_X86_REG_XMM13)
-    regz["xmm14"] = mu.reg_read(UC_X86_REG_XMM14)
-    regz["xmm15"] = mu.reg_read(UC_X86_REG_XMM15)
-    regz["xmm16"] = mu.reg_read(UC_X86_REG_XMM16)
-    regz["xmm17"] = mu.reg_read(UC_X86_REG_XMM17)
-    regz["xmm18"] = mu.reg_read(UC_X86_REG_XMM18)
-    regz["xmm19"] = mu.reg_read(UC_X86_REG_XMM19)
-    regz["xmm20"] = mu.reg_read(UC_X86_REG_XMM20)
-    regz["xmm21"] = mu.reg_read(UC_X86_REG_XMM21)
-    regz["xmm22"] = mu.reg_read(UC_X86_REG_XMM22)
-    regz["xmm23"] = mu.reg_read(UC_X86_REG_XMM23)
-    regz["xmm24"] = mu.reg_read(UC_X86_REG_XMM24)
-    regz["xmm25"] = mu.reg_read(UC_X86_REG_XMM25)
-    regz["xmm26"] = mu.reg_read(UC_X86_REG_XMM26)
-    regz["xmm27"] = mu.reg_read(UC_X86_REG_XMM27)
-    regz["xmm28"] = mu.reg_read(UC_X86_REG_XMM28)
-    regz["xmm29"] = mu.reg_read(UC_X86_REG_XMM29)
-    regz["xmm30"] = mu.reg_read(UC_X86_REG_XMM30)
-    regz["xmm31"] = mu.reg_read(UC_X86_REG_XMM31)
-
-    rXMM0c = regColor if regz["xmm0"] > 0 else emptyColor
-    rXMM1c = regColor if regz["xmm1"] > 0 else emptyColor
-    rXMM2c = regColor if regz["xmm2"] > 0 else emptyColor
-    rXMM3c = regColor if regz["xmm3"] > 0 else emptyColor
-    rXMM4c = regColor if regz["xmm4"] > 0 else emptyColor
-    rXMM5c = regColor if regz["xmm5"] > 0 else emptyColor
-    rXMM6c = regColor if regz["xmm6"] > 0 else emptyColor
-    rXMM7c = regColor if regz["xmm7"] > 0 else emptyColor
-    rXMM8c = regColor if regz["xmm8"] > 0 else emptyColor
-    rXMM9c = regColor if regz["xmm9"] > 0 else emptyColor
-    rXMM10c = regColor if regz["xmm10"] > 0 else emptyColor
-    rXMM11c = regColor if regz["xmm11"] > 0 else emptyColor
-    rXMM12c = regColor if regz["xmm12"] > 0 else emptyColor
-    rXMM13c = regColor if regz["xmm13"] > 0 else emptyColor
-    rXMM14c = regColor if regz["xmm14"] > 0 else emptyColor
-    rXMM15c = regColor if regz["xmm15"] > 0 else emptyColor
-    rXMM16c = regColor if regz["xmm16"] > 0 else emptyColor
-    rXMM17c = regColor if regz["xmm17"] > 0 else emptyColor
-    rXMM18c = regColor if regz["xmm18"] > 0 else emptyColor
-    rXMM19c = regColor if regz["xmm19"] > 0 else emptyColor
-    rXMM20c = regColor if regz["xmm20"] > 0 else emptyColor
-    rXMM21c = regColor if regz["xmm21"] > 0 else emptyColor
-    rXMM22c = regColor if regz["xmm22"] > 0 else emptyColor
-    rXMM23c = regColor if regz["xmm23"] > 0 else emptyColor
-    rXMM24c = regColor if regz["xmm24"] > 0 else emptyColor
-    rXMM25c = regColor if regz["xmm25"] > 0 else emptyColor
-    rXMM26c = regColor if regz["xmm26"] > 0 else emptyColor
-    rXMM27c = regColor if regz["xmm27"] > 0 else emptyColor
-    rXMM28c = regColor if regz["xmm28"] > 0 else emptyColor
-    rXMM29c = regColor if regz["xmm29"] > 0 else emptyColor
-    rXMM30c = regColor if regz["xmm30"] > 0 else emptyColor
-    rXMM31c = regColor if regz["xmm31"] > 0 else emptyColor
-
-    print(f'{regnColor} xmm0: {rXMM0c}{regz["xmm0" ]:032x}\x1b[0m {regnColor}xmm16: {rXMM16c}{regz["xmm16"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm1: {rXMM1c}{regz["xmm1" ]:032x}\x1b[0m {regnColor}xmm17: {rXMM17c}{regz["xmm17"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm2: {rXMM2c}{regz["xmm2" ]:032x}\x1b[0m {regnColor}xmm18: {rXMM18c}{regz["xmm18"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm3: {rXMM3c}{regz["xmm3" ]:032x}\x1b[0m {regnColor}xmm19: {rXMM19c}{regz["xmm19"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm4: {rXMM4c}{regz["xmm4" ]:032x}\x1b[0m {regnColor}xmm20: {rXMM20c}{regz["xmm20"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm5: {rXMM5c}{regz["xmm5" ]:032x}\x1b[0m {regnColor}xmm21: {rXMM21c}{regz["xmm21"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm6: {rXMM6c}{regz["xmm6" ]:032x}\x1b[0m {regnColor}xmm22: {rXMM22c}{regz["xmm22"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm7: {rXMM7c}{regz["xmm7" ]:032x}\x1b[0m {regnColor}xmm23: {rXMM23c}{regz["xmm23"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm8: {rXMM8c}{regz["xmm8" ]:032x}\x1b[0m {regnColor}xmm24: {rXMM24c}{regz["xmm24"]:032x}\x1b[0m')
-    print(f'{regnColor} xmm9: {rXMM9c}{regz["xmm9" ]:032x}\x1b[0m {regnColor}xmm25: {rXMM25c}{regz["xmm25"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm10: {rXMM10c}{regz["xmm10"]:032x}\x1b[0m {regnColor}xmm26: {rXMM26c}{regz["xmm26"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm11: {rXMM11c}{regz["xmm11"]:032x}\x1b[0m {regnColor}xmm27: {rXMM27c}{regz["xmm27"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm12: {rXMM12c}{regz["xmm12"]:032x}\x1b[0m {regnColor}xmm28: {rXMM28c}{regz["xmm28"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm13: {rXMM13c}{regz["xmm13"]:032x}\x1b[0m {regnColor}xmm29: {rXMM29c}{regz["xmm29"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm14: {rXMM14c}{regz["xmm14"]:032x}\x1b[0m {regnColor}xmm30: {rXMM30c}{regz["xmm30"]:032x}\x1b[0m')
-    print(f'{regnColor}xmm15: {rXMM15c}{regz["xmm15"]:032x}\x1b[0m {regnColor}xmm31: {rXMM31c}{regz["xmm31"]:032x}\x1b[0m')
-
-def runUC_x64(X86_CODE64, mu):
-    ADDRESS = sConfig["emu"]["baseaddr"]
-    STACK_BEGIN = sConfig["emu"]["stackaddr"]
-    try:
-        #mu = Uc(UC_ARCH_X86, UC_MODE_64) # Moving this out of here for a global emulator state
-        ucmemsz = 2 * 1024 * 1024 # map 2MB memory for this emulation
-        mu.mem_map(ADDRESS, 2 * 1024 * 1024)
-        mu.mem_write(ADDRESS, X86_CODE64) # map the code
-        mu.reg_write(UC_X86_REG_RSP, STACK_BEGIN) # initialize registers
-        mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE64)) # start emulator
-
-        regz["rax"] = mu.reg_read(UC_X86_REG_RAX)
-        regz["rbx"] = mu.reg_read(UC_X86_REG_RBX)
-        regz["rcx"] = mu.reg_read(UC_X86_REG_RCX)
-        regz["rdx"] = mu.reg_read(UC_X86_REG_RDX)
-        regz["rsi"] = mu.reg_read(UC_X86_REG_RSI)
-        regz["rdi"] = mu.reg_read(UC_X86_REG_RDI)
-        regz["rip"] = mu.reg_read(UC_X86_REG_RIP)
-        regz["rsp"] = mu.reg_read(UC_X86_REG_RSP)
-        regz["rbp"] = mu.reg_read(UC_X86_REG_RBP)
-        regz["r8"]  = mu.reg_read(UC_X86_REG_R8)
-        regz["r9"]  = mu.reg_read(UC_X86_REG_R9)
-        regz["r10"] = mu.reg_read(UC_X86_REG_R10)
-        regz["r11"] = mu.reg_read(UC_X86_REG_R11)
-        regz["r12"] = mu.reg_read(UC_X86_REG_R12)
-        regz["r13"] = mu.reg_read(UC_X86_REG_R13)
-        regz["r14"] = mu.reg_read(UC_X86_REG_R14)
-        regz["r15"] = mu.reg_read(UC_X86_REG_R15)
-        regz["flags"] = mu.reg_read(UC_X86_REG_EFLAGS)
-        rRAXc = regColor if regz["rax"] > 0 else emptyColor
-        rRBXc = regColor if regz["rbx"] > 0 else emptyColor
-        rRCXc = regColor if regz["rcx"] > 0 else emptyColor
-        rRDXc = regColor if regz["rdx"] > 0 else emptyColor
-        rRBPc = regColor if regz["rbp"] > 0 else emptyColor
-        rRSIc = regColor if regz["rsi"] > 0 else emptyColor
-        rRDIc = regColor if regz["rdi"] > 0 else emptyColor
-        rR08c = regColor if regz["r8"]  > 0 else emptyColor
-        rR09c = regColor if regz["r9"]  > 0 else emptyColor
-        rR10c = regColor if regz["r10"] > 0 else emptyColor
-        rR11c = regColor if regz["r11"] > 0 else emptyColor
-        rR12c = regColor if regz["r12"] > 0 else emptyColor
-        rR13c = regColor if regz["r13"] > 0 else emptyColor
-        rR14c = regColor if regz["r14"] > 0 else emptyColor
-        rR15c = regColor if regz["r15"] > 0 else emptyColor
-        rRSPc = "\x1b[38;5;214m" 
-        rRIPc = "\x1b[38;5;197m" 
-        rEFLAGSc = regColor if regz["flags"] > 0 else emptyColor
-
-        print(f"{regnColor}rax: {rRAXc}{regz['rax']:016x}\x1b[0m {regnColor}rip: {rRIPc}{regz['rip']:016x}\x1b[0m {regnColor}r11: {rR11c}{regz['r11']:016x}\x1b[0m")
-        print(f"{regnColor}rbx: {rRBXc}{regz['rbx']:016x}\x1b[0m {regnColor}rsp: {rRSPc}{regz['rsp']:016x}\x1b[0m {regnColor}r12: {rR12c}{regz['r12']:016x}\x1b[0m")
-        print(f"{regnColor}rcx: {rRCXc}{regz['rcx']:016x}\x1b[0m {regnColor}rbp: {rRBPc}{regz['rbp']:016x}\x1b[0m {regnColor}r13: {rR13c}{regz['r13']:016x}\x1b[0m")
-        print(f"{regnColor}rdx: {rRDXc}{regz['rdx']:016x}\x1b[0m {regnColor} r8: {rR08c}{regz['r8']:016x}\x1b[0m {regnColor}r14: {rR14c}{regz['r14']:016x}\x1b[0m")
-        print(f"{regnColor}rsi: {rRSIc}{regz['rsi']:016x}\x1b[0m {regnColor} r9: {rR09c}{regz['r9']:016x}\x1b[0m {regnColor}r15: {rR15c}{regz['r15']:016x}\x1b[0m")
-        print(f"{regnColor}rdi: {rRDIc}{regz['rdi']:016x}\x1b[0m {regnColor}r10: {rR10c}{regz['r10']:016x}\x1b[0m flg: {regz['flags']:016x}\x1b[0m")
-        if sConfig["x86"]["xmm"]:
-            printXMM(mu)
-        return 0
-
-    except UcError as e:
-        print("ERROR: %s" % e)
-        return 1
-
-def saveOutput(inCode, fname):
-    out = "\n".join(inCode)
-    out += "\n"
-    with open(fname,"w") as f:
-        f.write(out)
-        f.close()
-    print(f"Saved {fname}")
-
-def loadAsm(fname):
-    with open(fname,"r") as f:
-        out = f.read().splitlines()
-        f.close()
-    print(f"Loaded {fname}")
-    return out
-
-def printListing(asmInput,addr):
-    if len(asmInput) == 0:
-        print("No instructions!")
+        self.base_addr = sConfig["emu/baseaddr"]
+        self.stack_addr = sConfig["emu/stackaddr"]
+        self.asm_code = [] # Holds the source code
+        self.machine_code = b"" # The machine code
+        self.mu_ctx = Uc(self.arch, self.mode)# This is the emulator object
+        self.mu_state = "INIT" # The states are INIT, RUN, ERR
+        self.mu_memsize = sConfig["emu/memsize"]
+    def asm(self,asm_code):
+        try:
+            if self.arch_name == "x64":
+                ks = Ks(KS_ARCH_X86, KS_MODE_64)
+            elif self.arch_name == "arm64":
+                ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
+            else:
+                print("Invalid Arch!")
+            self.asm_code = asm_code
+            asmJoined = "; ".join(self.asm_code)
+            mc, num = ks.asm(asmJoined)
+            self.machine_code = bytes(mc)
+            return 0
+        except KsError as e:
+            print(f"[[: Asm Error :]] {e}")
+            return 1
+    def run(self):
+        runStatus = 1
+        try:
+            if self.mu_state == "RUN":
+                self.mu_ctx.emu_stop()
+                self.mu_state = "INIT" # Switch back to initialized
+            if self.mu_state == "INIT":
+                self.mu_ctx = Uc(self.arch, self.mode)
+                self.mu_ctx.mem_map(self.base_addr, self.mu_memsize)
+                self.mu_ctx.mem_write(self.base_addr, self.machine_code) # map the code
+                self.mu_ctx.reg_write(self.stack_reg, self.stack_addr) # Initialize Stack
+                eStart = self.mu_ctx.emu_start(self.base_addr, self.base_addr + len(self.machine_code)) # start emulator
+                self.mu_state = "RUN"
+                return self.mu_ctx.reg_read(self.ip_reg), 0
+        except UcError as e:
+            print("\x1b[48;5;196mERROR:\x1b[0m %s" % e)
+            return self.mu_ctx.reg_read(self.ip_reg), 1
+    def stop(self):
+        self.mu_ctx.emu_stop()
+        self.mu_state = "INIT" # Switch back to initialized
+    def printRegs(self):
+        scarelib.printRegsHandler(self.mu_ctx, self.arch_name, sConfig)
         return
-    asmString = "; ".join(asmInput)
-    lineMax = 0
-    for l in asmInput:
-        lineMax = len(l) if len(l) > lineMax else lineMax
-    asmAssembled = ksAssemble("; ".join(asmInput))
-    codeOffs = 0
-    lineNum = 1
-    # Predicting that in longer code with short jumps, this append trick will result in incorrect assembly if outside the range of a short jump
-    for i in asmInput:
-        asmStringLen = len(asmAssembled)
-        tempAsmString = asmString +" ; " + i
-        assembledAsm = ksAssemble(tempAsmString)
-        if assembledAsm is not None:
-            assembledAsmLen = len(assembledAsm) - asmStringLen # Disgusting hack to get the full length
+    def readReg(self, regname):
+        try:
+            reg_val = scarelib.rNames[self.arch_name][regname]
+            if reg_val:
+                reg_out = self.mu_ctx.reg_read(reg_val)
+                return reg_out
+        except:
+            print("Invalid Register")
+    def readMem(self, memaddr, size):
+        memout = self.mu_ctx.mem_read(memaddr, size)
+        scarelib.dHex(memout, memaddr)
+    def info(self):
+        print(f"┌ \x1b[38;5;220m   arch_name:\x1b[0m {self.arch_name}")
+        print(f"│ \x1b[38;5;220m   base_addr:\x1b[0m {self.base_addr:08x}")
+        print(f"│ \x1b[38;5;220m  stack_addr:\x1b[0m {self.stack_addr:08x}")
+        print(f"│ \x1b[38;5;220m    mem_size:\x1b[0m {self.mu_memsize:08x}")
+        print(f"│ \x1b[38;5;220m    asm_code:\x1b[0m {self.asm_code}")
+        print(f"│ \x1b[38;5;220mmachine_code:\x1b[0m {self.machine_code.hex()}")
+        print(f"└ \x1b[38;5;220m    mu_state:\x1b[0m {self.mu_state}")
+    def dis(self, memaddr, size):
+        if self.arch_name == "x64":
+            csArch = capstone.CS_ARCH_X86
+            csMode = capstone.CS_MODE_64
+        elif self.arch_name == "arm64":
+            csArch = capstone.CS_ARCH_ARM64
+            csMode = capstone.CS_MODE_ARM
         else:
-            assembledAsmLen = 0
-        asmBytes = asmAssembled[codeOffs:codeOffs+assembledAsmLen]
-        spacing = " "*(lineMax - len(i))
-        print(f"{lineNum:02d}│ \x1b[38;5;158m{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
-        addr = addr+assembledAsmLen
-        codeOffs = codeOffs+assembledAsmLen
-        lineNum = lineNum + 1
+            print("Unsupported arch!")
+            return
+        instructionList = []
+        try:
+            scareDis = capstone.Cs(csArch, csMode)
+            memout = self.mu_ctx.mem_read(memaddr, size)
+            for insn in scareDis.disasm(memout, memaddr):
+                instructionList.append(f"{insn.mnemonic} {insn.op_str}")
+            return instructionList
+        except Exception as e:
+            print(e)
+            return instructionList
 
-def configPrint():
-    print("Toggle config options, example: /config x86 xmm on")
-    for cX in sConfig.keys():
-        if cX == "emu":
-            continue # Skip for now
-        for cK, cV in sConfig[cX].items():
-            print(f"{cX}/{cK} = {cV}")
+## Commands
+cmdQuit = ["/exit", "/x", "/quit", "/q"]
+cmdHelp = ["/", "/help", "/?", "/h"]
+cmdConf = ["/config", "/c"]
+cmdPList= ["/list", "/l"]
 
-def parseCmd(cmd, mu):
-    global asmLines
-    if cmd[0] == "/":
-        cmdTok = cmd.split()
-        cmdTokLen = len(cmdTok)
-        if cmdTok[0] in quitcmds:
+# parseCmd
+# Commands must start with / to be parsed
+# If 0 is returned, the main command loop will not try to assemble the input
+# If 1 is returned, then the main command loop should try to assemble the input
+# If 2 is returned, the main command loop should not append the current command and just assemble and run
+# If 3 is returned, reinitialize the scaremu
+def parseCmd(cmd, smu):
+    shouldAssemble = 1 # If 1 is returned, then the 
+    if len(cmd) > 0:
+      if cmd[0] == "/":
+        shouldAssemble = 0
+        cmdList = cmd.split()
+        cmdListLen = len(cmdList)
+
+        if cmdList[0] in cmdQuit:
             sys.exit()
-        if cmdTok[0] in helpcmds:
-            print(helpfile)
-            return CmdContinue
-        if cmdTok[0] == "/back":
-            backn = int(cmdTok[1])
-            if backn <= len(asmLines):
-                asmLines = asmLines[:-backn]
-                print(f"Moved back {backn} lines to line {len(asmLines)}")
-            else:
-                print(f"Too far back! You're currently on line {len(asmLines)}")
-            return CmdContinue
-        if cmdTok[0] == "/save":
-            if cmdTokLen > 1:
-                saveOutput(asmLines,cmdTok[1])
-            else:
-                print("Please specify a filename!")
-            return CmdContinue
-        if cmdTok[0] == "/dis":
-            if cmdTokLen == 3:
-                #disAsm(asmAssembled,int(cmdTok[1],16))
-                asmAssembledDis = mu.mem_read(int(cmdTok[1],16), int(cmdTok[2]))
-                disassembler = capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_64)
-                for insn in disassembler.disasm(asmAssembledDis, int(cmdTok[1],16)):
-                    print("0x%x:\t%s\t%s" % (insn.address, insn.mnemonic, insn.op_str))
-            return CmdContinue
-        if cmdTok[0] == "/load":
-            if cmdTokLen > 1:
-                asmLines = loadAsm(cmdTok[1])
-                addr = baseaddr
-            else:
-                print("Please specify a filename!")
-            return CmdContinue
-        if cmdTok[0] in configcmds:
-            if cmdTokLen > 3:
-                cCategory = cmdTok[1]
-                cParam  = cmdTok[2]
-                cOption = cmdTok[3]
-                if cOption == "on":
-                    sConfig[cCategory][cParam] = True
-                elif cOption == "off":
-                    sConfig[cCategory][cParam] = False
-                print(f"Set {cCategory}/{cParam} to {cOption}")
-            else:
-                configPrint()
-            return CmdContinue
-        if cmdTok[0] == "/run":
-            return ""
-        if cmdTok[0] in listcmds:
-            printListing(asmLines,baseaddr)
-            return CmdContinue
-        if cmdTok[0] == "/read":
-            if cmdTokLen == 3:
+
+        if cmdList[0] in cmdHelp:
+            print(scarelib.helpfile)
+
+        if cmdList[0] in cmdConf:
+            if cmdListLen == 3:
                 try:
-                    memout = mu.mem_read(int(cmdTok[1],16), int(cmdTok[2]))
-                    dHex(memout, int(cmdTok[1],16))
+                    cfgOptName = cmdList[1]
+                    cfgOptVal = cmdList[2]
+                    if cfgOptName in sConfig.keys():
+                        print(f"{cfgOptName}->{cfgOptVal}")
+                        # TODO: Keep better track of config option types
+                        if cfgOptName == "emu/arch":
+                            if cfgOptVal in supportedArches:
+                                sConfig[cfgOptName] = cfgOptVal
+                            else:
+                                print(f"Invalid arch! Supported arches: {supportedArches}")
+                        else:
+                            sConfig[cfgOptName] = int(cfgOptVal, 16) # Only support hex rn
+                    else:
+                        print("Invalid config opt name!")
+                except:
+                    print("Error in /config")
+            elif cmdListLen == 2:
+                try:
+                    cfgOptName = cmdList[1]
+                    if cfgOptName in sConfig.keys():
+                        print(f"{cfgOptName} = {sConfig[cfgOptName]}")
+                except:
+                    print("Error in /config")
+            else:
+                scarelib.configPrint(sConfig)
+
+        if cmdList[0] == "/info":
+            if smu:
+                smu.info()
+            else:
+                print("No emulator running!")
+
+        if cmdList[0] == "/back":
+            backAmount = int(cmdList[1])
+            if backAmount <= len(smu.asm_code):
+                smu.asm_code = smu.asm_code[:-backAmount]
+                print(f"Moved back {backAmount} lines to line {len(smu.asm_code)}")
+                shouldAssemble = 2 # Reassemble and run
+            else:
+                print(f"Too far back! You're currently on line {len(smu.asm_code)}")
+
+        if cmdList[0] == "/load":
+            if cmdListLen > 1:
+                smu.asm_code = scarelib.loadAsm(cmdList[1])
+                currentAddr = sConfig["emu/baseaddr"]
+            else:
+                print("Please specify a filename!")
+
+        if cmdList[0] == "/save":
+            if cmdListLen > 1:
+                scarelib.saveAsm(smu.asm_code,cmdList[1])
+            else:
+                print("Please specify a filename!")
+
+        if cmdList[0] == "/run":
+            shouldAssemble = 2 # Reassemble and run
+
+        if cmdList[0] == "/reset":
+            shouldAssemble = 3 # Reinitialize 
+
+        if cmdList[0] in cmdPList:
+            scarelib.printListing(smu.arch_name, smu.asm_code,sConfig["emu/baseaddr"])
+
+        if cmdList[0] == "/read":
+            if cmdListLen == 3:
+                try:
+                    memout = 0
+                    if cmdList[1][0:2] == "0x":
+                        memout = smu.mu_ctx.mem_read(int(cmdList[1],16), int(cmdList[2]))
+                    elif cmdList[1][0] == "$":
+                        regTarget = cmdList[1].split("$")[1]
+                        regValue = smu.readReg(regTarget)
+                        if regValue is not None:
+                            memout = smu.mu_ctx.mem_read(regValue, int(cmdList[2]))
+                    if memout:
+                        scarelib.dHex(memout, int(cmdList[2],16))
+                    else:
+                        print("Usage: /read {0xaddress|$register} size")
                 except Exception as e:
                     print(e)
+                    print("Usage: /read {0xaddress|$register} size")
             else:
-                print("Usage: /read 0xaddress size")
-            return CmdContinue
-    return cmd
+                print("Usage: /read {0xaddress|$register} size")
+
+        if cmdList[0] == "/dis":
+            try:
+                if cmdListLen == 3:
+                    if cmdList[1][0:2] == "0x":
+                        smu.dis(int(cmdList[1],16), int(cmdList[2]))
+                    elif cmdList[1][0] == "$":
+                        regTarget = cmdList[1].split("$")[1]
+                        regValue = smu.readReg(regTarget)
+                        if regValue is not None:
+                            instructions4dis = smu.dis(regValue, int(cmdList[2]))
+                            scarelib.printListing(smu.arch_name, instructions4dis, regValue)
+                    else:
+                        print("Usage: /dis {0xaddress|$register} size")
+                else:
+                    print("Usage: /dis {0xaddress|$register} size")
+            except Exception as e:
+                print(e)
+                print("Usage: /dis {0xaddress|$register} size")
+
+        if cmdList[0] == "/export":
+            try:
+                if cmdListLen == 3:
+                    fArch = smu.arch_name
+                    if cmdList[1] == "bin":
+                        mcLen = len(smu.machine_code)
+                        if mcLen > 0:
+                            print(f"Exporting {mcLen} bytes of code as raw binary")
+                            scarelib.exportBin(smu.machine_code, "bin", fArch, cmdList[2])
+                        else:
+                            print("No machine code to export!")
+                    elif cmdList[1] == "elf64":
+                        mcLen = len(smu.machine_code)
+                        if mcLen > 0:
+                            print(f"Exporting {mcLen} bytes of code as ELF64")
+                            scarelib.exportBin(smu.machine_code, "elf64", fArch, cmdList[2])
+                        else:
+                            print("No machine code to export!")
+                    else:
+                        print("Invalid binary type!")
+                else:
+                    print("Usage: /export type filename")
+            except Exception as e:
+                print(f"Export Error: {e}")
+    else:
+        shouldAssemble = 0 # Don't do anything if there's no input
+
+    return shouldAssemble
 
 if __name__ == '__main__':
-    mu_obj = Uc(UC_ARCH_X86, UC_MODE_64) # Initial emulator context
-    print(splash)
+    print(scarelib.splash)
+    args = parser.parse_args()
+    print("Type / for help\n")
+    inFile = args.inFile if args.inFile else ""
+    currentArch = args.arch.lower() if args.arch else "NoArch"
+    if args.stackaddr:
+        sConfig["emu/stackaddr"] = args.stackaddr
+    if args.baseaddr:
+        sConfig["emu/baseaddr"] = args.baseaddr
+    if args.memsize:
+        sConfig["emu/memsize"] = args.memsize   
+    if currentArch == "NoArch":
+        print(f"Please select an architecture! Use `/c emu/arch ARCH`.\nSupported arches: {supportedArches}")
+        smu = False
+        currentAddr = sConfig["emu/baseaddr"]
+    else:
+        sConfig["emu/arch"] = currentArch
+        smu = scaremu(currentArch)
+        currentAddr = sConfig["emu/baseaddr"]
+        if inFile:
+            smu.asm_code = scarelib.loadAsm(inFile)
     while True:
         try:
-            cmd = input(f"[\x1b[38;5;231mx64\x1b[0m]\x1b[38;5;197m{addr:02x}\x1b[0m> ")
-            cmd = parseCmd(cmd, mu_obj)
-            if cmd == CmdContinue:
-                continue
-            if len(cmd) > 0:
-                asmLines.append(cmd)
-            if len(asmLines) > 0:
-                asmJoined = "; ".join(asmLines)
-                asmAssembled = ksAssemble(asmJoined)
-                if asmAssembled is not None:
-                    mu_obj = Uc(UC_ARCH_X86, UC_MODE_64) # Reinitialize for now, need a better way to manage the state
-                    runUC_x64(asmAssembled, mu_obj)
-                    addr = regz["rip"]
+            cmd = input(f"[\x1b[38;5;231m{currentArch}]{scarelib.cIP}{currentAddr:02x}\x1b[0m> ")
+            shouldAsm = parseCmd(cmd, smu)
+            print(shouldAsm)
+            if ( smu == False ) and (sConfig["emu/arch"] != "NoArch"): 
+                smu = scaremu(sConfig["emu/arch"])
+                currentArch = sConfig["emu/arch"]
+                currentAddr = sConfig["emu/baseaddr"]
+            if sConfig["emu/arch"] != currentArch:
+                smu = scaremu(sConfig["emu/arch"])
+                currentArch = sConfig["emu/arch"]
+                currentAddr = sConfig["emu/baseaddr"]
+            if shouldAsm == 3:
+                smu = scaremu(sConfig["emu/arch"])
+                currentArch = sConfig["emu/arch"]
+                currentAddr = sConfig["emu/baseaddr"]
+            if shouldAsm:
+                if shouldAsm == 1:
+                    smu.asm_code.append(cmd)
+                if len(smu.asm_code) > 0:
+                    asmStatus = smu.asm(smu.asm_code)
+                    if asmStatus == 0:
+                        currentAddr, runStatus = smu.run()
+                        if runStatus == 0:
+                            smu.printRegs()
+                        else:
+                            print("run() returned a non-zero value")
+                    else:
+                        smu.asm_code.pop() # Gets rid of the last line of assembly
                 else:
-                    print("Type / for the help menu")
-                    asmLines.pop()
+                    currentAddr = sConfig["emu/baseaddr"]
         except EOFError:
             break
