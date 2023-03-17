@@ -147,7 +147,7 @@ cmdPList= ["/list", "/l"]
 # If 2 is returned, the main command loop should not append the current command and just assemble and run
 # If 3 is returned, reinitialize the scaremu
 def parseCmd(cmd, smu):
-    shouldAssemble = 1 # If 1 is returned, then the 
+    shouldAssemble = 1
     if len(cmd) > 0:
       if cmd[0] == "/":
         shouldAssemble = 0
