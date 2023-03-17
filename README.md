@@ -90,6 +90,14 @@ pop rdx
 /save test2.asm
 ```
 
+Export as binary, here you should get an elf64 called `exit55.elf` that exits when run.
+```
+mov eax, 0x3c
+mov edi, 55
+syscall
+/export elf64 exit55.elf
+```
+
 Using config options
 
 ```
