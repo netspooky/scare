@@ -321,7 +321,6 @@ if __name__ == '__main__':
         try:
             cmd = input(f"[\x1b[38;5;231m{currentArch}]{scarelib.cIP}{currentAddr:02x}\x1b[0m> ")
             shouldAsm = parseCmd(cmd, smu)
-            print(shouldAsm)
             if ( smu == False ) and (sConfig["emu/arch"] != "NoArch"): 
                 smu = scaremu(sConfig["emu/arch"])
                 currentArch = sConfig["emu/arch"]
