@@ -81,6 +81,5 @@ movaps xmm5, xmm4
 
 # Gallery
 
-![screenshot of a terminal using the tool](https://user-images.githubusercontent.com/26436276/225543014-fd356435-a567-479f-ac0e-a968019d6537.png)
-
+![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/225798291-dac2741c-d553-4b4f-82ec-b1a680a16436.png)
 
