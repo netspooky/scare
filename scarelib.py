@@ -3,6 +3,7 @@ from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm64_const import *
+from unicorn.arm_const import *
 from keystone import *
 import capstone
 from scareconfig import *
@@ -13,7 +14,7 @@ splash = """\x1b[38;5;213m\
 │      ││       │      ││       │──────┘\x1b[38;5;231m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.2.2]
+                [v0.2.3]
 """
 
 helpfile = """
@@ -60,6 +61,25 @@ errColor = "\x1b[48;5;196m\x1b[38;5;231m"
 
 ### Register Output Stuff ######################################################
 rNames = {
+    "arm32" : {
+        "r0" : UC_ARM_REG_R0,
+        "r1" : UC_ARM_REG_R1,
+        "r2" : UC_ARM_REG_R2,
+        "r3" : UC_ARM_REG_R3,
+        "r4" : UC_ARM_REG_R4,
+        "r5" : UC_ARM_REG_R5,
+        "r6" : UC_ARM_REG_R6,
+        "r7" : UC_ARM_REG_R7,
+        "r8" : UC_ARM_REG_R8,
+        "r9" : UC_ARM_REG_R9,
+        "r10": UC_ARM_REG_R10,
+        "r11": UC_ARM_REG_R11,
+        "r12": UC_ARM_REG_R12,
+        "sp":  UC_ARM_REG_SP,
+        "lr":  UC_ARM_REG_LR,
+        "pc":  UC_ARM_REG_PC,
+        "cpsr":  UC_ARM_REG_CPSR,
+    },
     "arm64" : {
         "x0" : UC_ARM64_REG_X0,
         "x1" : UC_ARM64_REG_X1,
@@ -174,6 +194,8 @@ def printRegsHandler(mu, archname, sConfig):
         printRegs_x86(mu, sConfig)
     elif archname == "arm64":
         printRegs_arm64(mu, sConfig)
+    elif archname == "arm32":
+        printRegs_arm32(mu, sConfig)
     else:
         print(f"Invalid Arch ({arch})!")
 
@@ -211,6 +233,14 @@ def regFmt(mu, regType, regSize, regName):
         return
     outRegText = f"{outRegColor}{outRegValFmt}{cEnd}"
     return outRegText
+
+def printRegs_arm32(mu, sConfig):
+    print(f"{cRegN}  r0: {regFmt(mu,0,32,rNames['arm32']['r0' ])} {cRegN} r1: {regFmt(mu,0,32,rNames['arm32']['r1' ])} {cRegN} r2: {regFmt(mu,0,32,rNames['arm32']['r2' ])} {cRegN} r3: {regFmt(mu,0,32,rNames['arm32']['r3' ])}")
+    print(f"{cRegN}  r4: {regFmt(mu,0,32,rNames['arm32']['r4' ])} {cRegN} r5: {regFmt(mu,0,32,rNames['arm32']['r5' ])} {cRegN} r6: {regFmt(mu,0,32,rNames['arm32']['r6' ])} {cRegN} r7: {regFmt(mu,0,32,rNames['arm32']['r7' ])} ")
+    print(f"{cRegN}  r8: {regFmt(mu,0,32,rNames['arm32']['r8' ])} {cRegN} r9: {regFmt(mu,0,32,rNames['arm32']['r9' ])} {cRegN}r10: {regFmt(mu,0,32,rNames['arm32']['r10'])} {cRegN}r11: {regFmt(mu,0,32,rNames['arm32']['r11'])}")
+    print(f"{cRegN} r12: {regFmt(mu,0,32,rNames['arm32']['r12'])} {cRegN} sp: {regFmt(mu,2,32,rNames['arm32']['sp' ])} {cRegN} lr: {regFmt(mu,0,32,rNames['arm32']['lr' ])} {cRegN} pc: {regFmt(mu,1,32,rNames['arm32']['pc' ])} ")
+    print(f"{cRegN}cpsr: {regFmt(mu,0,32,rNames['arm32']['cpsr'] )} ")
+    print(cEnd,end="")
 
 def printRegs_arm64(mu, sConfig):
     print(f"{cRegN} x0: {regFmt(mu,0,64,rNames['arm64']['x0' ])} {cRegN} pc: {regFmt(mu,1,64,rNames['arm64']['pc'] )} {cRegN} sp: {regFmt(mu,2,64,rNames['arm64']['sp'] )} ")
@@ -344,6 +374,31 @@ archez = {
         },
         "funcs": {
             "reg_state": printRegs_arm64,
+        },
+    },
+    "arm32": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_ARM,
+                "mode": UC_MODE_ARM,
+                "stack_reg": UC_ARM_REG_SP,
+                "ip_reg": UC_ARM_REG_PC,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_ARM,
+                "mode": KS_MODE_ARM,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_ARM,
+                "mode": capstone.CS_MODE_ARM,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_arm32,
         },
     },
 }
