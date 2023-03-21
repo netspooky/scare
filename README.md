@@ -10,6 +10,8 @@ Currently Supported Architectures
 - arm32
 - arm64
 
+scare relies heavily on "the holy trinity" (-frank2), but it shouldn't be hard to add different assemblers, disassemblers, and emulators.
+
 Requirements
 
 - keystone-engine
