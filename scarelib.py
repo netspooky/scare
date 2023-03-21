@@ -4,6 +4,8 @@ from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm64_const import *
 from keystone import *
+import capstone
+from scareconfig import *
 
 splash = """\x1b[38;5;213m\
 ┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐\x1b[38;5;219m
@@ -11,30 +13,31 @@ splash = """\x1b[38;5;213m\
 │      ││       │      ││       │──────┘\x1b[38;5;231m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.2.1]
+                [v0.2.2]
 """
 
 helpfile = """
-Help File
+scare Help
 
 / /? /help                        -- Open help menu
 /x /exit /q /quit                 -- Quit the program
-/info                             -- Info about the emulator state
-/l /list                          -- List the current program
-/run                              -- Run the current program
-/reset                            -- Reset the emulator to a clean state
+
 /back n                           -- Go back n number of lines
-/load file.asm                    -- Load listing from file.asm (overwrites current program)
-/save file.asm                    -- Save assembly output to file.asm
+/dis {0xaddress|$register} NUM    -- Disassemble NUM bytes from 0xaddress or $register
 /export FILETYPE FILENAME         -- Export machine code as FILETYPE to the FILENAME
                                      FILETYPE List:
                                      - bin
                                      - elf64
                                      - pe32
+/info                             -- Info about the emulator state
+/l /list                          -- List the current program
+/load file.asm                    -- Load listing from file.asm (overwrites current program)
 /read {0xaddress|$register} NUM   -- Read NUM bytes from 0xaddress or $register
-/dis {0xaddress|$register} NUM    -- Disassemble NUM bytes from 0xaddress or $register
+/reset                            -- Reset the emulator to a clean state
+/run                              -- Run the current program
+/save file.asm                    -- Save assembly output to file.asm
 
-Config Commands (Use /c or /config)
+[[: Config Commands :]] (Use /c or /config)
 NOTE: Run /reset if you are changing emu/* options, otherwise the emulator may not start!
 
 /c               -- Print all config options
@@ -53,140 +56,7 @@ cIP   = "\x1b[38;5;219m" # Instruction Pointer color
 cLnNum = "\x1b[48;5;55m"
 cLnPipe = "\x1b[38;5;196m"
 cAsmList = "\x1b[38;5;51m"
-
-def configPrint(sConfig):
-    print("Current Config Options")
-    for cK, cV in sConfig.items():
-        print(f"{cK} = {cV}")
-
-### Helper Functions ###########################################################
-# dHex - Dump Hex
-# inBytes = byte array to dump
-# baseAddr = the base address
-def dHex(inBytes,baseAddr):
-    offs = 0
-    while offs < len(inBytes):
-        bHex = ""
-        bAsc = ""
-        bChunk = inBytes[offs:offs+16]
-        for b in bChunk:
-            bAsc += chr(b) if chr(b).isprintable() and b < 0x7f else '.'
-            bHex += "{:02x} ".format(b)
-        sp = " "*(48-len(bHex))
-        print("{:08x}: {}{} {}".format(baseAddr + offs, bHex, sp, bAsc))
-        offs = offs + 16
-
-# loadAsm - Load assembly listing from a file
-def loadAsm(fname):
-    with open(fname,"r") as f:
-        out = f.read().splitlines()
-        f.close()
-    print(f"Loaded {fname}")
-    return out
-
-# saveAsm - Save assembly listing to a file
-def saveAsm(inCode, fname):
-    out = "\n".join(inCode)
-    out += "\n"
-    with open(fname,"w") as f:
-        f.write(out)
-        f.close()
-    print(f"Saved {fname}")
-
-# exportBin - Export binary to a file
-def exportBin(inCode, fileType, fArch, fname):
-    if fileType == "bin":
-        outBin = inCode
-    elif fileType == "elf64":
-        if fArch == "x64":
-            eMach = b"\x3e\x00"
-        elif fArch == "arm64":
-            eMach = b"\xb7\x00"
-        else:
-            print("Unsupported Arch!")
-            return
-        b =  b"" # ELF64 Template based on https://n0.lol/test.asm
-        b += b"\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000000 .ELF............
-        b += b"\x02\x00"+eMach+b"\x01\x00\x00\x00\x78\x00\x40\x00\x00\x00\x00\x00" # 00000010 ..>.....x.@.....
-        b += b"\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000020 @...............
-        b += b"\x00\x00\x00\x00\x40\x00\x38\x00\x01\x00\x00\x00\x00\x00\x00\x00"   # 00000030 ....@.8.........
-        b += b"\x01\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000040 ................
-        b += b"\x00\x00\x40\x00\x00\x00\x00\x00\x00\x00\x40\x00\x00\x00\x00\x00"   # 00000050 ..@.......@.....
-        b += b"\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"   # 00000060 ................
-        b += b"\x00\x02\x00\x00\x00\x00\x00\x00"                                   # 00000070 ........
-        outBin = b
-        outBin += inCode
-    elif fileType == "pe32":
-        if fArch == "x64":
-            eMach = b"\x4c\x01"
-        elif fArch == "x86":
-            eMach = b"\x4c\x01"
-        else:
-            print("Unsupported Arch!")
-            return
-        b =  b"" # Tiny PE32 Template based on https://github.com/netspooky/kimagure/blob/main/pe32template.asm
-        b += b"\x4d\x5a\x00\x01\x50\x45\x00\x00"+eMach+b"\x00\x00\x00\x00\x00\x00" # 00000000 MZ..PE..L.......
-        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x60\x00\x03\x01\x0b\x01\x00\x00"   # 00000010 ........`.......
-        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x7c\x00\x00\x00"   # 00000020 ............|...
-        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x40\x00\x04\x00\x00\x00"   # 00000030 ..........@.....
-        b += b"\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00"   # 00000040 ................
-        b += b"\x00\x00\x00\x00\x80\x00\x00\x00\x7c\x00\x00\x00\x00\x00\x00\x00"   # 00000050 ........|.......
-        b += b"\x02\x00\x00\x04\x00\x00\x10\x00\x00\x10\x00\x00\x00\x00\x10\x00"   # 00000060 ................
-        b += b"\x00"*12                                                            # 00000070 ............
-    else:
-        return
-    with open(fname,"wb") as f:
-        f.write(outBin)
-        f.close()
-    print(f"Exported code to {fname}")
-
-def ksAssemble(ks_arch_name, CODE):
-    try:
-        if ks_arch_name == "x64":
-            ks = Ks(KS_ARCH_X86, KS_MODE_64)
-        elif ks_arch_name == "x86":
-            ks = Ks(KS_ARCH_X86, KS_MODE_32)
-        elif ks_arch_name == "arm64":
-            ks = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
-        else:
-            print("Invalid Arch!")
-        mc, num = ks.asm(CODE)
-        return bytes(mc)
-
-    except KsError as e:
-        eChk = f"{e}"
-        if "KS_ERR_ASM_SYMBOL_REDEFINED" in eChk:
-            return # Returning because this will happen if a label is appended
-        else:
-            print("ERROR: %s" %e)
-            return
-
-def printListing(ks_arch_name,asmInput,addr):
-    if len(asmInput) == 0:
-        print("No instructions!")
-        return
-    asmString = "; ".join(asmInput)
-    lineMax = 0
-    for l in asmInput:
-        lineMax = len(l) if len(l) > lineMax else lineMax
-    asmAssembled = ksAssemble(ks_arch_name, "; ".join(asmInput))
-    codeOffs = 0
-    lineNum = 1
-    # Predicting that in longer code with short jumps, this append trick will result in incorrect assembly if outside the range of a short jump
-    for i in asmInput:
-        asmStringLen = len(asmAssembled)
-        tempAsmString = asmString +" ; " + i
-        assembledAsm = ksAssemble(ks_arch_name, tempAsmString)
-        if assembledAsm is not None:
-            assembledAsmLen = len(assembledAsm) - asmStringLen # Disgusting hack to get the full length
-        else:
-            assembledAsmLen = 0
-        asmBytes = asmAssembled[codeOffs:codeOffs+assembledAsmLen]
-        spacing = " "*(lineMax - len(i))
-        print(f"{cLnNum}{lineNum:03d}{cEnd}{cLnPipe}│{cEnd} {cAsmList}{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
-        addr = addr+assembledAsmLen
-        codeOffs = codeOffs+assembledAsmLen
-        lineNum = lineNum + 1
+errColor = "\x1b[48;5;196m\x1b[38;5;231m"
 
 ### Register Output Stuff ######################################################
 rNames = {
@@ -356,6 +226,21 @@ def printRegs_arm64(mu, sConfig):
     print(f"{cRegN}x10: {regFmt(mu,0,64,rNames['arm64']['x10'])} {cRegN}x20: {regFmt(mu,0,64,rNames['arm64']['x20'])} {cRegN}x30: {regFmt(mu,0,64,rNames['arm64']['x30'])}")
     print(cEnd,end="")
 
+def printRegs_x86(mu, sConfig):
+    print(f"{cRegN}eax: {regFmt(mu,0,32,rNames['x86']['eax'])}")
+    print(f"{cRegN}ecx: {regFmt(mu,0,32,rNames['x86']['ecx'])}")
+    print(f"{cRegN}edx: {regFmt(mu,0,32,rNames['x86']['edx'])}")
+    print(f"{cRegN}ebx: {regFmt(mu,0,32,rNames['x86']['ebx'])}")
+    print(f"{cRegN}esp: {regFmt(mu,2,32,rNames['x86']['esp'])}")
+    print(f"{cRegN}ebp: {regFmt(mu,0,32,rNames['x86']['ebp'])}")
+    print(f"{cRegN}esi: {regFmt(mu,0,32,rNames['x86']['esi'])}")
+    print(f"{cRegN}edi: {regFmt(mu,0,32,rNames['x86']['edi'])}")
+    print(f"{cRegN}eip: {regFmt(mu,1,32,rNames['x86']['eip'])}")
+    print(f"{cRegN}efl: {regFmt(mu,0,32,rNames['x86']['eflags'])}")
+    print(cEnd,end="")
+    if sConfig["x86/xmm"]:
+        printRegs_XMM(mu, sConfig)
+
 def printRegs_XMM(mu, sConfig):
     print(f"{cRegN} xmm0: {regFmt(mu,0,128,rNames['xmm']['xmm0'] )} {cRegN}xmm16: {regFmt(mu,0,128,rNames['xmm']['xmm16'])}")
     print(f"{cRegN} xmm1: {regFmt(mu,0,128,rNames['xmm']['xmm1'] )} {cRegN}xmm17: {regFmt(mu,0,128,rNames['xmm']['xmm17'])}")
@@ -385,17 +270,310 @@ def printRegs_x64(mu, sConfig):
     if sConfig["x86/xmm"]:
         printRegs_XMM(mu, sConfig)
 
-def printRegs_x86(mu, sConfig):
-    print(f"{cRegN}eax: {regFmt(mu,0,32,rNames['x86']['eax'])}")
-    print(f"{cRegN}ecx: {regFmt(mu,0,32,rNames['x86']['ecx'])}")
-    print(f"{cRegN}edx: {regFmt(mu,0,32,rNames['x86']['edx'])}")
-    print(f"{cRegN}ebx: {regFmt(mu,0,32,rNames['x86']['ebx'])}")
-    print(f"{cRegN}esp: {regFmt(mu,2,32,rNames['x86']['esp'])}")
-    print(f"{cRegN}ebp: {regFmt(mu,0,32,rNames['x86']['ebp'])}")
-    print(f"{cRegN}esi: {regFmt(mu,0,32,rNames['x86']['esi'])}")
-    print(f"{cRegN}edi: {regFmt(mu,0,32,rNames['x86']['edi'])}")
-    print(f"{cRegN}eip: {regFmt(mu,1,32,rNames['x86']['eip'])}")
-    print(f"{cRegN}efl: {regFmt(mu,0,32,rNames['x86']['eflags'])}")
-    print(cEnd,end="")
-    if sConfig["x86/xmm"]:
-        printRegs_XMM(mu, sConfig)
+archez = {
+    "x64": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_X86,
+                "mode": UC_MODE_64,
+                "stack_reg": UC_X86_REG_RSP,
+                "ip_reg": UC_X86_REG_RIP,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_X86,
+                "mode": KS_MODE_64,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_X86,
+                "mode": capstone.CS_MODE_64,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_x64,
+        },
+    },
+    "x86": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_X86,
+                "mode": UC_MODE_32,
+                "stack_reg": UC_X86_REG_ESP,
+                "ip_reg": UC_X86_REG_EIP,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_X86,
+                "mode": KS_MODE_32,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_X86,
+                "mode": capstone.CS_MODE_32,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_x86,
+        },
+    },
+    "arm64": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_ARM64,
+                "mode": UC_MODE_ARM,
+                "stack_reg": UC_ARM64_REG_SP,
+                "ip_reg": UC_ARM64_REG_PC,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_ARM64,
+                "mode": KS_MODE_LITTLE_ENDIAN,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_ARM64,
+                "mode": capstone.CS_MODE_ARM,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_arm64,
+        },
+    },
+}
+
+### Helper Functions ###########################################################
+def configPrint(sConfig):
+    print("Current Config Options")
+    for cK, cV in sConfig.items():
+        print(f"{cK} = {cV}")
+
+# dHex - Dump Hex
+# inBytes = byte array to dump
+# baseAddr = the base address
+def dHex(inBytes,baseAddr):
+    offs = 0
+    while offs < len(inBytes):
+        bHex = ""
+        bAsc = ""
+        bChunk = inBytes[offs:offs+16]
+        for b in bChunk:
+            bAsc += chr(b) if chr(b).isprintable() and b < 0x7f else '.'
+            bHex += "{:02x} ".format(b)
+        sp = " "*(48-len(bHex))
+        print("{:08x}: {}{} {}".format(baseAddr + offs, bHex, sp, bAsc))
+        offs = offs + 16
+
+# loadAsm - Load assembly listing from a file
+def loadAsm(fname):
+    with open(fname,"r") as f:
+        out = f.read().splitlines()
+        f.close()
+    print(f"Loaded {fname}")
+    return out
+
+# saveAsm - Save assembly listing to a file
+def saveAsm(inCode, fname):
+    out = "\n".join(inCode)
+    out += "\n"
+    with open(fname,"w") as f:
+        f.write(out)
+        f.close()
+    print(f"Saved {fname}")
+
+# exportBin - Export binary to a file
+def exportBin(inCode, fileType, fArch, fname):
+    if fileType == "bin":
+        outBin = inCode
+    elif fileType == "elf64":
+        if fArch == "x64":
+            eMach = b"\x3e\x00"
+        elif fArch == "arm64":
+            eMach = b"\xb7\x00"
+        else:
+            print("Unsupported Arch!")
+            return
+        b =  b"" # ELF64 Template based on https://n0.lol/test.asm
+        b += b"\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000000 .ELF............
+        b += b"\x02\x00"+eMach+b"\x01\x00\x00\x00\x78\x00\x40\x00\x00\x00\x00\x00" # 00000010 ..>.....x.@.....
+        b += b"\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000020 @...............
+        b += b"\x00\x00\x00\x00\x40\x00\x38\x00\x01\x00\x00\x00\x00\x00\x00\x00"   # 00000030 ....@.8.........
+        b += b"\x01\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"   # 00000040 ................
+        b += b"\x00\x00\x40\x00\x00\x00\x00\x00\x00\x00\x40\x00\x00\x00\x00\x00"   # 00000050 ..@.......@.....
+        b += b"\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"   # 00000060 ................
+        b += b"\x00\x02\x00\x00\x00\x00\x00\x00"                                   # 00000070 ........
+        outBin = b
+        outBin += inCode
+    elif fileType == "pe32":
+        if fArch == "x64":
+            eMach = b"\x4c\x01"
+        elif fArch == "x86":
+            eMach = b"\x4c\x01"
+        else:
+            print("Unsupported Arch!")
+            return
+        b =  b"" # Tiny PE32 Template based on https://github.com/netspooky/kimagure/blob/main/pe32template.asm
+        b += b"\x4d\x5a\x00\x01\x50\x45\x00\x00"+eMach+b"\x00\x00\x00\x00\x00\x00" # 00000000 MZ..PE..L.......
+        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x60\x00\x03\x01\x0b\x01\x00\x00"   # 00000010 ........`.......
+        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x7c\x00\x00\x00"   # 00000020 ............|...
+        b += b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x40\x00\x04\x00\x00\x00"   # 00000030 ..........@.....
+        b += b"\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00"   # 00000040 ................
+        b += b"\x00\x00\x00\x00\x80\x00\x00\x00\x7c\x00\x00\x00\x00\x00\x00\x00"   # 00000050 ........|.......
+        b += b"\x02\x00\x00\x04\x00\x00\x10\x00\x00\x10\x00\x00\x00\x00\x10\x00"   # 00000060 ................
+        b += b"\x00"*12                                                            # 00000070 ............
+    else:
+        return
+    with open(fname,"wb") as f:
+        f.write(outBin)
+        f.close()
+    print(f"Exported code to {fname}")
+
+def ksAssemble(ks_arch, ks_mode, CODE):
+    try:
+        ks = Ks(ks_arch, ks_mode)
+        mc, num = ks.asm(CODE)
+        return bytes(mc)
+    except KsError as e:
+        eChk = f"{e}"
+        if "KS_ERR_ASM_SYMBOL_REDEFINED" in eChk:
+            return # Returning because this will happen if a label is appended
+        else:
+            print("ERROR: %s" %e)
+            return
+
+def printListing(mu, asmInstructions):
+    addr = sConfig["emu/baseaddr"]
+    if len(asmInstructions) == 0:
+        print("No instructions!")
+        return
+    asmString = "; ".join(asmInstructions)
+    lineMax = 0
+    for l in asmInstructions:
+        lineMax = len(l) if len(l) > lineMax else lineMax
+    asmAssembled = ksAssemble(mu.asm_arch, mu.asm_mode, "; ".join(asmInstructions))
+    codeOffs = 0
+    lineNum = 1
+    # Predicting that in longer code with short jumps, this append trick will result in incorrect assembly if outside the range of a short jump
+    for i in asmInstructions:
+        asmStringLen = len(asmAssembled)
+        tempAsmString = asmString +" ; " + i
+        assembledAsm = ksAssemble(mu.asm_arch, mu.asm_mode, tempAsmString)
+        if assembledAsm is not None:
+            assembledAsmLen = len(assembledAsm) - asmStringLen # Disgusting hack to get the full length
+        else:
+            assembledAsmLen = 0
+        asmBytes = asmAssembled[codeOffs:codeOffs+assembledAsmLen]
+        spacing = " "*(lineMax - len(i))
+        print(f"{cLnNum}{lineNum:03d}{cEnd}{cLnPipe}│{cEnd} {cAsmList}{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
+        addr = addr+assembledAsmLen
+        codeOffs = codeOffs+assembledAsmLen
+        lineNum = lineNum + 1
+
+##### Main Class 
+class scaremu:
+    def __init__(self, inArch):
+        if inArch in archez.keys():
+            self.arch_name = inArch.lower()
+            self.mu_arch   = archez[inArch]["emu"]["unicorn"]["arch"]
+            self.mu_mode   = archez[inArch]["emu"]["unicorn"]["mode"]
+            self.stack_reg = archez[inArch]["emu"]["unicorn"]["stack_reg"]
+            self.ip_reg    = archez[inArch]["emu"]["unicorn"]["ip_reg"]
+            self.asm_arch  = archez[inArch]["asm"]["keystone"]["arch"]
+            self.asm_mode  = archez[inArch]["asm"]["keystone"]["mode"]
+            self.dis_arch  = archez[inArch]["dis"]["capstone"]["arch"]
+            self.dis_mode  = archez[inArch]["dis"]["capstone"]["mode"]
+            self.base_addr = sConfig["emu/baseaddr"]
+            self.stack_addr = sConfig["emu/stackaddr"]
+            self.asm_code = [] # Holds the source code
+            self.machine_code = b"" # The machine code
+            self.mu_ctx = Uc(self.mu_arch, self.mu_mode)# This is the emulator object
+            self.mu_state = "INIT" # The states are INIT, RUN, ERR
+            self.mu_memsize = sConfig["emu/memsize"]
+        else:
+            print("Unsupported Arch")
+            return
+    def errPrint(self,eFunc, eMsg):
+        print(f"{errColor}[[: {eFunc} Error :]]{cEnd}\n{eMsg}")
+    def asm(self,asm_code):
+        try:
+            if self.arch_name in archez.keys():
+                ks = Ks(self.asm_arch, self.asm_mode)
+                self.asm_code = asm_code
+                asmJoined = "; ".join(self.asm_code)
+                mc, num = ks.asm(asmJoined)
+                self.machine_code = bytes(mc)
+                return 0
+            else:
+                print("Invalid Arch!")
+                return 1
+        except KsError as e:
+            self.errPrint("asm",e)
+            return 1
+    def dis(self, memaddr, size):
+        try:
+            instructionList = []
+            if self.arch_name in archez.keys():
+                csArch = self.dis_arch
+                csMode = self.dis_mode
+            else:
+                print("Invalid arch!")
+                return instructionList
+            scareDis = capstone.Cs(csArch, csMode)
+            memout = self.mu_ctx.mem_read(memaddr, size)
+            for insn in scareDis.disasm(memout, memaddr):
+                instructionList.append(f"{insn.mnemonic} {insn.op_str}")
+            return instructionList
+        except Exception as e:
+            self.errPrint("dis",e)
+            return instructionList
+    def run(self):
+        runStatus = 1
+        try:
+            if self.mu_state == "RUN":
+                self.mu_ctx.emu_stop()
+                self.mu_state = "INIT" # Switch back to initialized
+            if self.mu_state == "INIT":
+                self.mu_ctx = Uc(self.mu_arch, self.mu_mode)
+                self.mu_ctx.mem_map(self.base_addr, self.mu_memsize)
+                self.mu_ctx.mem_write(self.base_addr, self.machine_code) # map the code
+                self.mu_ctx.reg_write(self.stack_reg, self.stack_addr) # Initialize Stack
+                eStart = self.mu_ctx.emu_start(self.base_addr, self.base_addr + len(self.machine_code)) # start emulator
+                self.mu_state = "RUN"
+                return self.mu_ctx.reg_read(self.ip_reg), 0
+        except UcError as e:
+            self.errPrint("run",e)
+            return self.mu_ctx.reg_read(self.ip_reg), 1
+    def stop(self):
+        self.mu_ctx.emu_stop()
+        self.mu_state = "INIT" # Switch back to initialized
+    def printRegs(self):
+        printRegsHandler(self.mu_ctx, self.arch_name, sConfig)
+        return
+    def readReg(self, regname):
+        try:
+            reg_val = rNames[self.arch_name][regname]
+            if reg_val:
+                reg_out = self.mu_ctx.reg_read(reg_val)
+                return reg_out
+        except Exception as e:
+            self.errPrint("readReg",e)
+    def readMem(self, memaddr, size):
+        try:
+            memout = self.mu_ctx.mem_read(memaddr, size)
+            dHex(memout, memaddr)
+        except Exception as e:
+            self.errPrint("readMem",e)
+    def info(self):
+        print(f"┌ \x1b[38;5;220m   arch_name:\x1b[0m {self.arch_name}")
+        print(f"│ \x1b[38;5;220m   base_addr:\x1b[0m {self.base_addr:08x}")
+        print(f"│ \x1b[38;5;220m  stack_addr:\x1b[0m {self.stack_addr:08x}")
+        print(f"│ \x1b[38;5;220m    mem_size:\x1b[0m {self.mu_memsize:08x}")
+        print(f"│ \x1b[38;5;220m    asm_code:\x1b[0m {self.asm_code}")
+        print(f"│ \x1b[38;5;220mmachine_code:\x1b[0m {self.machine_code.hex()}")
+        print(f"└ \x1b[38;5;220m    mu_state:\x1b[0m {self.mu_state}")
