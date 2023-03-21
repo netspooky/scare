@@ -114,6 +114,7 @@ rNames = {
         "x30": UC_ARM64_REG_X30,
         "sp":  UC_ARM64_REG_SP,
         "pc":  UC_ARM64_REG_PC,
+        "cpsr":  UC_ARM_REG_CPSR,
     },
     "x86": {
         "eax": UC_X86_REG_EAX,
@@ -243,18 +244,18 @@ def printRegs_arm32(mu, sConfig):
     print(cEnd,end="")
 
 def printRegs_arm64(mu, sConfig):
-    print(f"{cRegN} x0: {regFmt(mu,0,64,rNames['arm64']['x0' ])} {cRegN} pc: {regFmt(mu,1,64,rNames['arm64']['pc'] )} {cRegN} sp: {regFmt(mu,2,64,rNames['arm64']['sp'] )} ")
-    print(f"{cRegN} x1: {regFmt(mu,0,64,rNames['arm64']['x1' ])} {cRegN}x11: {regFmt(mu,0,64,rNames['arm64']['x11'])} {cRegN}x21: {regFmt(mu,0,64,rNames['arm64']['x21'])}")
-    print(f"{cRegN} x2: {regFmt(mu,0,64,rNames['arm64']['x2' ])} {cRegN}x12: {regFmt(mu,0,64,rNames['arm64']['x12'])} {cRegN}x22: {regFmt(mu,0,64,rNames['arm64']['x22'])}")
-    print(f"{cRegN} x3: {regFmt(mu,0,64,rNames['arm64']['x3' ])} {cRegN}x13: {regFmt(mu,0,64,rNames['arm64']['x13'])} {cRegN}x23: {regFmt(mu,0,64,rNames['arm64']['x23'])}")
-    print(f"{cRegN} x4: {regFmt(mu,0,64,rNames['arm64']['x4' ])} {cRegN}x14: {regFmt(mu,0,64,rNames['arm64']['x14'])} {cRegN}x24: {regFmt(mu,0,64,rNames['arm64']['x24'])}")
-    print(f"{cRegN} x5: {regFmt(mu,0,64,rNames['arm64']['x5' ])} {cRegN}x15: {regFmt(mu,0,64,rNames['arm64']['x15'])} {cRegN}x25: {regFmt(mu,0,64,rNames['arm64']['x25'])}")
-    print(f"{cRegN} x6: {regFmt(mu,0,64,rNames['arm64']['x6' ])} {cRegN}x16: {regFmt(mu,0,64,rNames['arm64']['x16'])} {cRegN}x26: {regFmt(mu,0,64,rNames['arm64']['x26'])}")
-    print(f"{cRegN} x7: {regFmt(mu,0,64,rNames['arm64']['x7' ])} {cRegN}x17: {regFmt(mu,0,64,rNames['arm64']['x17'])} {cRegN}x27: {regFmt(mu,0,64,rNames['arm64']['x27'])}")
-    print(f"{cRegN} x8: {regFmt(mu,0,64,rNames['arm64']['x8' ])} {cRegN}x18: {regFmt(mu,0,64,rNames['arm64']['x18'])} {cRegN}x28: {regFmt(mu,0,64,rNames['arm64']['x28'])}")
-    print(f"{cRegN} x9: {regFmt(mu,0,64,rNames['arm64']['x9' ])} {cRegN}x19: {regFmt(mu,0,64,rNames['arm64']['x19'])} {cRegN}x29: {regFmt(mu,0,64,rNames['arm64']['x29'])}")
-    print(f"{cRegN}x10: {regFmt(mu,0,64,rNames['arm64']['x10'])} {cRegN}x20: {regFmt(mu,0,64,rNames['arm64']['x20'])} {cRegN}x30: {regFmt(mu,0,64,rNames['arm64']['x30'])}")
+    print(f"{cRegN} x0: {regFmt(mu,0,64,rNames['arm64']['x0' ])} {cRegN}  x1: {regFmt(mu,0,64,rNames['arm64']['x1' ])} {cRegN}  x2: {regFmt(mu,0,64,rNames['arm64']['x2' ])} {cRegN}  x3: {regFmt(mu,0,64,rNames['arm64']['x3' ])}")
+    print(f"{cRegN} x4: {regFmt(mu,0,64,rNames['arm64']['x4' ])} {cRegN}  x5: {regFmt(mu,0,64,rNames['arm64']['x5' ])} {cRegN}  x6: {regFmt(mu,0,64,rNames['arm64']['x6' ])} {cRegN}  x7: {regFmt(mu,0,64,rNames['arm64']['x7' ])}")
+    print(f"{cRegN} x8: {regFmt(mu,0,64,rNames['arm64']['x8' ])} {cRegN}  x9: {regFmt(mu,0,64,rNames['arm64']['x9' ])} {cRegN} x10: {regFmt(mu,0,64,rNames['arm64']['x10'])} {cRegN} x11: {regFmt(mu,0,64,rNames['arm64']['x11'])}")
+    print(f"{cRegN}x12: {regFmt(mu,0,64,rNames['arm64']['x12'])} {cRegN} x13: {regFmt(mu,0,64,rNames['arm64']['x13'])} {cRegN} x14: {regFmt(mu,0,64,rNames['arm64']['x14'])} {cRegN} x15: {regFmt(mu,0,64,rNames['arm64']['x15'])}")
+    print(f"{cRegN}x16: {regFmt(mu,0,64,rNames['arm64']['x16'])} {cRegN} x17: {regFmt(mu,0,64,rNames['arm64']['x17'])} {cRegN} x18: {regFmt(mu,0,64,rNames['arm64']['x18'])} {cRegN} x19: {regFmt(mu,0,64,rNames['arm64']['x19'])}")
+    print(f"{cRegN}x20: {regFmt(mu,0,64,rNames['arm64']['x20'])} {cRegN} x21: {regFmt(mu,0,64,rNames['arm64']['x21'])} {cRegN} x22: {regFmt(mu,0,64,rNames['arm64']['x22'])} {cRegN} x23: {regFmt(mu,0,64,rNames['arm64']['x23'])}")
+    print(f"{cRegN}x24: {regFmt(mu,0,64,rNames['arm64']['x24'])} {cRegN} x25: {regFmt(mu,0,64,rNames['arm64']['x25'])} {cRegN} x26: {regFmt(mu,0,64,rNames['arm64']['x26'])} {cRegN} x27: {regFmt(mu,0,64,rNames['arm64']['x27'])}")
+    print(f"{cRegN}x28: {regFmt(mu,0,64,rNames['arm64']['x28'])} {cRegN} x29: {regFmt(mu,0,64,rNames['arm64']['x29'])} {cRegN} x30: {regFmt(mu,0,64,rNames['arm64']['x30'])} {cRegN}  sp: {regFmt(mu,2,64,rNames['arm64']['sp'] )}")
+    print(f"{cRegN} pc: {regFmt(mu,1,64,rNames['arm64']['pc'] )} {cRegN}cpsr: {regFmt(mu,0,64,rNames['arm64']['cpsr'])}")
     print(cEnd,end="")
+
+
 
 def printRegs_x86(mu, sConfig):
     print(f"{cRegN}eax: {regFmt(mu,0,32,rNames['x86']['eax'])}")
