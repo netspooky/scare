@@ -14,7 +14,7 @@ splash = """\x1b[38;5;213m\
 │      ││       │      ││       │──────┘\x1b[38;5;231m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.2.3]
+                [v0.2.4]
 """
 
 helpfile = """
@@ -183,22 +183,6 @@ rNames = {
         "xmm31": UC_X86_REG_XMM31,
     },
 }
-
-# printRegsHandler - Wrapper to print all configured registers for a given arch.
-# mu = emulator object
-# archname = The architecture name
-# sConfig = The scare config 
-def printRegsHandler(mu, archname, sConfig):
-    if archname == "x64":
-        printRegs_x64(mu, sConfig)
-    elif archname == "x86":
-        printRegs_x86(mu, sConfig)
-    elif archname == "arm64":
-        printRegs_arm64(mu, sConfig)
-    elif archname == "arm32":
-        printRegs_arm32(mu, sConfig)
-    else:
-        print(f"Invalid Arch ({arch})!")
 
 # regFmt - Format register for output
 # mu = Emulator Object
@@ -609,7 +593,10 @@ class scaremu:
         self.mu_ctx.emu_stop()
         self.mu_state = "INIT" # Switch back to initialized
     def printRegs(self):
-        printRegsHandler(self.mu_ctx, self.arch_name, sConfig)
+        try:
+            archez[self.arch_name]["funcs"]["reg_state"](self.mu_ctx, sConfig)
+        except Exception as e:
+            self.errPrint("printRegs",e)
         return
     def readReg(self, regname):
         try:
