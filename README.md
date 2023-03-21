@@ -7,6 +7,7 @@ This is a little assembly repl and emulator for fun. The primary usecase is to e
 Currently Supported Architectures
 - x86
 - x64
+- arm32
 - arm64
 
 Requirements
@@ -25,7 +26,7 @@ Command line flags
 │      ││       │      ││       │──────┘
 └──────┘└──────┘└──────┘└       └──────┘
 Simple Configurable Asm REPL && Emulator
-                [v0.2.1]
+                [v0.2.3]
 
 usage: scare.py [-h] [-a ARCH] [-f INFILE] [--base BASEADDR] [--stack STACKADDR]
                 [--memsize MEMSIZE]
@@ -42,27 +43,27 @@ options:
 Help file
 ```
 [x64]400000> /
-
-Help File
+scare Help
 
 / /? /help                        -- Open help menu
 /x /exit /q /quit                 -- Quit the program
-/info                             -- Info about the emulator state
-/l /list                          -- List the current program
-/run                              -- Run the current program
-/reset                            -- Reset the emulator to a clean state
+
 /back n                           -- Go back n number of lines
-/load file.asm                    -- Load listing from file.asm (overwrites current program)
-/save file.asm                    -- Save assembly output to file.asm
+/dis {0xaddress|$register} NUM    -- Disassemble NUM bytes from 0xaddress or $register
 /export FILETYPE FILENAME         -- Export machine code as FILETYPE to the FILENAME
                                      FILETYPE List:
                                      - bin
                                      - elf64
                                      - pe32
+/info                             -- Info about the emulator state
+/l /list                          -- List the current program
+/load file.asm                    -- Load listing from file.asm (overwrites current program)
 /read {0xaddress|$register} NUM   -- Read NUM bytes from 0xaddress or $register
-/dis {0xaddress|$register} NUM    -- Disassemble NUM bytes from 0xaddress or $register
+/reset                            -- Reset the emulator to a clean state
+/run                              -- Run the current program
+/save file.asm                    -- Save assembly output to file.asm
 
-Config Commands (Use /c or /config)
+[[: Config Commands :]] (Use /c or /config)
 NOTE: Run /reset if you are changing emu/* options, otherwise the emulator may not start!
 
 /c               -- Print all config options
