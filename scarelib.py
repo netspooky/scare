@@ -55,6 +55,7 @@ scare Help
 /l /list                          -- List the current program
 /load file.asm                    -- Load listing from file.asm (overwrites current program)
 /read {0xaddress|$register} NUM   -- Read NUM bytes from 0xaddress or $register
+/regs                             -- Print register state
 /reset                            -- Reset the emulator to a clean state
 /run                              -- Run the current program
 /save file.asm                    -- Save assembly output to file.asm
