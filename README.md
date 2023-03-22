@@ -76,10 +76,10 @@ add eax, ecx
 
 Loading a file, saving a file
 ```
-/load examples/test.asm
+/load examples/x64/test.asm
 /l
 /run
-/read 0x400ff0 32
+/read $rsp 32
 pop rdx
 /save test2.asm
 ```
