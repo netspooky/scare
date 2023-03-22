@@ -123,7 +123,7 @@ def parseCmd(cmd, smu):
                         if regValue is not None:
                             memout = smu.mu_ctx.mem_read(regValue, int(cmdList[2]))
                     if memout:
-                        dHex(memout, int(cmdList[2],16))
+                        dHex(memout, int(cmdList[1],16))
                     else:
                         print("Usage: /read {0xaddress|$register} size")
                 except Exception as e:
