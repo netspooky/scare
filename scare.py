@@ -74,6 +74,12 @@ def parseCmd(cmd, smu):
             else:
                 print("No emulator running!")
 
+        if cmdList[0] == "/regs":
+            if smu:
+                smu.printRegs()
+            else:
+                print("No emulator running!")
+
         if cmdList[0] == "/back":
             backAmount = int(cmdList[1])
             if backAmount <= len(smu.asm_code):
