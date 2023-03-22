@@ -113,7 +113,7 @@ Exporting code to an elf64 and running it:
 
 There are many things that would be awesome to add in the future: more architectures (both well-known and obscure), more cpu modes, better environment emulation, hot swapping between emu/asm/dis libraries etc. Getting the emulator, assembler, and disassembler to play nicely is not always straightforward. 
 
-Some features may not be supported due to requiring decisions to be made on the configuration of the emulator. The goal of this project is to be a generic REPL and emulator solution for a target arch. As a result, the development roadmap is going to be "adding stuff that people bring up", while keeping it easy to use and develop.
+Some features may not be supported at the moment due to requiring decisions to be made on the configuration of the emulator. The goal of this project is to be a generic REPL and emulator solution for a target arch. As a result, the development roadmap is going to be "adding stuff that people bring up", while keeping it easy to use and develop.
 
 If you have ideas, feel free to make a PR.
 
