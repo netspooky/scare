@@ -4,8 +4,6 @@
 
 There aren't many modern assembly REPLs out there. The ones that do exist are either opaque webapps, or are tied to specific architecture/platform to run. `scare` was built for people who want to test, experiment, or otherwise play with assembly code. All assembled code is run in an emulator, which executes only the code you give it. The multi-architecture design for the underlying `scarelib` library is meant to be modular, allowing for new architectures to be added quickly. 
 
-While scare does emulation for the target architecture
-
 Core Features
 - Write assembly in a REPL environment
 - Load or save programs you've written
