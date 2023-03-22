@@ -7,15 +7,36 @@ from unicorn.arm_const import *
 from keystone import *
 import capstone
 from scareconfig import *
+import random
 
-splash = """\x1b[38;5;213m\
-┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐\x1b[38;5;219m
-└──────┐│       ┌──────││       │      │\x1b[38;5;225m
-│      ││       │      ││       │──────┘\x1b[38;5;231m
+def printSplash(splashColSet):
+    splashColz = {
+    "litepink": (213, 1), 
+    "furnace":  (196, 1),
+    "aqua":     (27,  1),
+    "cerulean": (87,  6),
+    "xyber":    (28,  1),
+    "sunrise":  (208, 1),
+    "haunter":  (103, 6),
+    "mew":      (170, 1),
+    "articuno": (63,  1),
+    "esp":      (63,  6),
+    "grey":     (236, 1),
+    }
+    if splashColSet == "random":
+        splashColSet = random.choice(list(splashColz.items()))
+        splashColSet = splashColSet[0]
+    spc  = splashColz[splashColSet][0]
+    mode = splashColz[splashColSet][1] # 1 or 6, 6 would do columns, from 1 to 87
+    splash = f"""\x1b[38;5;{spc}m\
+┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐\x1b[38;5;{spc+(mode*6)}m
+└──────┐│       ┌──────││       │      │\x1b[38;5;{spc+(mode*12)}m
+│      ││       │      ││       │──────┘\x1b[38;5;{spc+(mode*18)}m
 └──────┘└──────┘└──────┘└       └──────┘\x1b[0m
 Simple Configurable Asm REPL && Emulator 
-                [v0.2.4]
-"""
+                [v0.3.0]
+    """
+    print(splash)
 
 helpfile = """
 scare Help
@@ -47,17 +68,6 @@ NOTE: Run /reset if you are changing emu/* options, otherwise the emulator may n
 /c x86/xmm 1     -- Enable x86/xmm
 """
 
-cGReg = "\x1b[38;5;154m" # General Purpose Register Value Color
-cZero = "\x1b[38;5;244m" # Grey for 0's
-cRegN = "\x1b[38;5;50m"  # Color for register names
-cEnd  = "\x1b[0m"        # For the end of lines
-cSPtr = "\x1b[38;5;226m" # Stack Pointer Color
-cIP   = "\x1b[38;5;219m" # Instruction Pointer color
-# Listing Colors
-cLnNum = "\x1b[48;5;55m"
-cLnPipe = "\x1b[38;5;196m"
-cAsmList = "\x1b[38;5;51m"
-errColor = "\x1b[48;5;196m\x1b[38;5;231m"
 
 ### Register Output Stuff ######################################################
 rNames = {
@@ -239,8 +249,6 @@ def printRegs_arm64(mu, sConfig):
     print(f"{cRegN} pc: {regFmt(mu,1,64,rNames['arm64']['pc'] )} {cRegN}cpsr: {regFmt(mu,0,64,rNames['arm64']['cpsr'])}")
     print(cEnd,end="")
 
-
-
 def printRegs_x86(mu, sConfig):
     print(f"{cRegN}eax: {regFmt(mu,0,32,rNames['x86']['eax'])}")
     print(f"{cRegN}ecx: {regFmt(mu,0,32,rNames['x86']['ecx'])}")
@@ -413,8 +421,11 @@ def dHex(inBytes,baseAddr):
 # loadAsm - Load assembly listing from a file
 def loadAsm(fname):
     with open(fname,"r") as f:
-        out = f.read().splitlines()
+        outt = f.read().splitlines()
         f.close()
+    out = []
+    for oLine in outt:
+        out.append(oLine.split(";")[0]) # Splits out comments
     print(f"Loaded {fname}")
     return out
 
@@ -467,6 +478,8 @@ def exportBin(inCode, fileType, fArch, fname):
         b += b"\x00\x00\x00\x00\x80\x00\x00\x00\x7c\x00\x00\x00\x00\x00\x00\x00"   # 00000050 ........|.......
         b += b"\x02\x00\x00\x04\x00\x00\x10\x00\x00\x10\x00\x00\x00\x00\x10\x00"   # 00000060 ................
         b += b"\x00"*12                                                            # 00000070 ............
+        outBin = b
+        outBin += inCode
     else:
         return
     with open(fname,"wb") as f:
@@ -510,7 +523,7 @@ def printListing(mu, asmInstructions):
             assembledAsmLen = 0
         asmBytes = asmAssembled[codeOffs:codeOffs+assembledAsmLen]
         spacing = " "*(lineMax - len(i))
-        print(f"{cLnNum}{lineNum:03d}{cEnd}{cLnPipe}│{cEnd} {cAsmList}{i}\x1b[0m {spacing}\x1b[38;5;244m; {addr:04X}: \x1b[38;5;227m{asmBytes.hex()}\x1b[0m")
+        print(f"{cLnNum}{lineNum:03d}{cEnd}{cLnPipe}│{cEnd} {cAsmList}{i}{cEnd} {spacing}{cComment}; {addr:04X}: {cBytes}{asmBytes.hex()}{cEnd}")
         addr = addr+assembledAsmLen
         codeOffs = codeOffs+assembledAsmLen
         lineNum = lineNum + 1
@@ -539,7 +552,7 @@ class scaremu:
             print("Unsupported Arch")
             return
     def errPrint(self,eFunc, eMsg):
-        print(f"{errColor}[[: {eFunc} Error :]]{cEnd}\n{eMsg}")
+        print(f"{cErr}[[: {eFunc} Error :]]{cEnd}\n{eMsg}")
     def asm(self,asm_code):
         try:
             if self.arch_name in archez.keys():
@@ -613,10 +626,10 @@ class scaremu:
         except Exception as e:
             self.errPrint("readMem",e)
     def info(self):
-        print(f"┌ \x1b[38;5;220m   arch_name:\x1b[0m {self.arch_name}")
-        print(f"│ \x1b[38;5;220m   base_addr:\x1b[0m {self.base_addr:08x}")
-        print(f"│ \x1b[38;5;220m  stack_addr:\x1b[0m {self.stack_addr:08x}")
-        print(f"│ \x1b[38;5;220m    mem_size:\x1b[0m {self.mu_memsize:08x}")
-        print(f"│ \x1b[38;5;220m    asm_code:\x1b[0m {self.asm_code}")
-        print(f"│ \x1b[38;5;220mmachine_code:\x1b[0m {self.machine_code.hex()}")
-        print(f"└ \x1b[38;5;220m    mu_state:\x1b[0m {self.mu_state}")
+        print(f"┌ {cInfo}   arch_name:{cEnd} {self.arch_name}")
+        print(f"│ {cInfo}   base_addr:{cEnd} {self.base_addr:08x}")
+        print(f"│ {cInfo}  stack_addr:{cEnd} {self.stack_addr:08x}")
+        print(f"│ {cInfo}    mem_size:{cEnd} {self.mu_memsize:08x}")
+        print(f"│ {cInfo}    asm_code:{cEnd} {self.asm_code}")
+        print(f"│ {cInfo}machine_code:{cEnd} {self.machine_code.hex()}")
+        print(f"└ {cInfo}    mu_state:{cEnd} {self.mu_state}")
