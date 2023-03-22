@@ -1,8 +1,16 @@
-# scare
+# scare - Simple Configurable Assembly REPL && Emulator
 
-I haven't properly shared this yet because it's not finished. It's here for testing purposes. Use at your own risk.
+`scare` is a multi-arch assembly REPL and emulator for your command line.
 
-This is a little assembly repl and emulator for fun. The primary usecase is to enable you to quickly see what some assembly code does. It's not meant to be a serious emulation solution.
+There aren't many modern assembly REPLs out there. The ones that do exist are either opaque webapps, or are tied to specific architecture/platform to run. `scare` was built for people who want to test, experiment, or otherwise play with assembly code. All assembled code is run in an emulator, which executes only the code you give it. The multi-architecture design for the underlying `scarelib` library is meant to be modular, allowing for new architectures to be added quickly. 
+
+While scare does emulation for the target architecture
+
+Core Features
+- Write assembly in a REPL environment
+- Load or save programs you've written
+- Step backwards in your program
+- Export your assembled code as small binaries for testing
 
 Currently Supported Architectures
 - x86
@@ -10,36 +18,17 @@ Currently Supported Architectures
 - arm32
 - arm64
 
-scare relies heavily on "the holy trinity" (-frank2), but it shouldn't be hard to add different assemblers, disassemblers, and emulators.
-
 Requirements
-
+- python3
 - keystone-engine
 - unicorn
 - capstone
 
 # Usage
 
-Command line flags
+Invoke scare from the command line with the desired architecture. This will create a REPL instance with the default settings.
 ```
-～ python3 scare.py -h
-┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐
-└──────┐│       ┌──────││       │      │
-│      ││       │      ││       │──────┘
-└──────┘└──────┘└──────┘└       └──────┘
-Simple Configurable Asm REPL && Emulator
-                [v0.2.3]
-
-usage: scare.py [-h] [-a ARCH] [-f INFILE] [--base BASEADDR] [--stack STACKADDR]
-                [--memsize MEMSIZE]
-
-options:
-  -h, --help         show this help message and exit
-  -a ARCH            Target architecture
-  -f INFILE          File to read
-  --base BASEADDR    Base Address (default: 0x400000)
-  --stack STACKADDR  Stack Address (default: 0x401000)
-  --memsize MEMSIZE  Emulator Memory Size (default: 0x200000 [2MB])
+python3 scare.py -a x64
 ```
 
 Help file
