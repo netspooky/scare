@@ -2,7 +2,9 @@
 
 `scare` is a multi-arch assembly REPL and emulator for your command line.
 
-There aren't many modern assembly REPLs out there. The ones that do exist are either opaque webapps, or are tied to specific architecture/platform to run. `scare` was built for people who want to test, experiment, or otherwise play with assembly code. All assembled code is run in an emulator, which executes only the code you give it. The multi-architecture design for the underlying `scarelib` library is meant to be modular, allowing for new architectures to be added quickly. 
+There aren't many modern assembly REPLs out there. The ones that do exist are either opaque webapps, or are tied to specific architecture/platform. `scare` was built for people who want to test, experiment, or otherwise play with assembly code. All assembled code is run in an emulator, which executes only the code you give it. The multi-architecture design for the underlying `scarelib` library is meant to be modular, allowing for new architectures to be added quickly. 
+
+Version 0.3.0 is the first public release of `scare`.
 
 Core Features
 - Write assembly in a REPL environment
@@ -102,11 +104,7 @@ movaps xmm5, xmm4
 # Gallery
 
 Decoding shellcode:
-
-![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/225850688-e885a004-430a-493f-9247-ce0807eb9040.png)
+![screenshot of the tool in a terminal](https://user-images.githubusercontent.com/26436276/226787427-0b6827a6-1c13-40f7-9bc0-ee235740d780.png)
 
 Exporting code to an elf64 and running it:
-
-![screenshot of exporting code and running as an elf64](https://user-images.githubusercontent.com/26436276/225850777-88ab3008-e002-49ca-95f9-1b0fe99a2563.png)
-
-
+![screenshot of exporting code and running as an elf64](https://user-images.githubusercontent.com/26436276/226787469-eb7c6d7d-2481-447b-b2fc-4390f643cc61.png)
