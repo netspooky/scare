@@ -115,15 +115,18 @@ def parseCmd(cmd, smu):
             if cmdListLen == 3:
                 try:
                     memout = 0
+                    baseAddr = 0
                     if cmdList[1][0:2] == "0x":
                         memout = smu.mu_ctx.mem_read(int(cmdList[1],16), int(cmdList[2]))
+                        baseAddr = int(cmdList[1],16)
                     elif cmdList[1][0] == "$":
                         regTarget = cmdList[1].split("$")[1]
                         regValue = smu.readReg(regTarget)
                         if regValue is not None:
                             memout = smu.mu_ctx.mem_read(regValue, int(cmdList[2]))
+                            baseAddr = regValue
                     if memout:
-                        dHex(memout, int(cmdList[2],16))
+                        dHex(memout, baseAddr)
                     else:
                         print("Usage: /read {0xaddress|$register} size")
                 except Exception as e:
