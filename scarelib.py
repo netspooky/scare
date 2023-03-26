@@ -59,6 +59,7 @@ scare Help
 /reset                            -- Reset the emulator to a clean state
 /run                              -- Run the current program
 /save file.asm                    -- Save assembly output to file.asm
+/history                          -- show a command history
 
 [[: Config Commands :]] (Use /c or /config)
 NOTE: Run /reset if you are changing emu/* options, otherwise the emulator may not start!
@@ -438,6 +439,12 @@ def saveAsm(inCode, fname):
         f.write(out)
         f.close()
     print(f"Saved {fname}")
+
+# history - Show the asm code entered until now
+def history(inCode):
+    out = "\n".join(inCode)
+    out += "\n"
+    print(out)
 
 # exportBin - Export binary to a file
 def exportBin(inCode, fileType, fArch, fname):

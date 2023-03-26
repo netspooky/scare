@@ -102,6 +102,9 @@ def parseCmd(cmd, smu):
             else:
                 print("Please specify a filename!")
 
+        if cmdList[0] == "/history":
+            history(smu.asm_code)
+
         if cmdList[0] == "/run":
             shouldAssemble = 2 # Reassemble and run
 
@@ -208,6 +211,7 @@ if __name__ == '__main__':
     while True:
         try:
             cmd = input(f"[{cArchP}{currentArch}]{cIP}{currentAddr:02x}{cEnd}> ")
+            print(cmd)
             shouldAsm = parseCmd(cmd, smu)
             if ( smu == False ) and (sConfig["emu/arch"] != "NoArch"): 
                 smu = scaremu(sConfig["emu/arch"])
