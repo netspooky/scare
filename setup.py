@@ -8,11 +8,11 @@ setuptools.setup(
     license="GPLv2",
     license_files=["LICENSE.md"],
     classifiers=["License :: OSI Approved :: GNU General Public License v2 (GPLv2)"],
-    requires=["unicorn", "keystone", "capstone"],
+    install_requires=["unicorn", "keystone-engine", "capstone"],
     py_modules=["scare"],
     entry_points={
         "console_scripts": [
-            "scare = scare",
+            "scare = scare:main",
         ]
     },
 )
