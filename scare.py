@@ -183,7 +183,7 @@ def parseCmd(cmd, smu):
 
     return shouldAssemble
 
-if __name__ == '__main__':
+def main():
     printSplash("cerulean")
     args = parser.parse_args()
     print("Type / for help\n")
@@ -238,3 +238,6 @@ if __name__ == '__main__':
                     currentAddr = sConfig["emu/baseaddr"]
         except EOFError:
             break
+
+if __name__ == '__main__':
+    main()
