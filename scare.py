@@ -2,7 +2,11 @@
 from __future__ import print_function
 import time
 import sys
-import readline
+try:
+    import readline
+except Exception:
+    from pyreadline3 import Readline
+    readline = Readline()
 import argparse
 from scarelib import *
 
