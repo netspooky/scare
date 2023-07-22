@@ -1,3 +1,4 @@
 keystone-engine
 unicorn
 capstone
+pyreadline3
