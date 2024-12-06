@@ -4,6 +4,7 @@ from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm64_const import *
 from unicorn.arm_const import *
+from unicorn.mips_const import *
 from keystone import *
 import capstone
 from scareconfig import *
@@ -193,6 +194,43 @@ rNames = {
         "xmm30": UC_X86_REG_XMM30,
         "xmm31": UC_X86_REG_XMM31,
     },
+    "mips32": {
+        "zero": UC_MIPS_REG_ZERO,
+        "at":   UC_MIPS_REG_AT,
+        "v0":   UC_MIPS_REG_V0,
+        "v1":   UC_MIPS_REG_V1,
+        "a0":   UC_MIPS_REG_A0,
+        "a1":   UC_MIPS_REG_A1,
+        "a2":   UC_MIPS_REG_A2,
+        "a3":   UC_MIPS_REG_A3,
+        "t0":   UC_MIPS_REG_T0,
+        "t1":   UC_MIPS_REG_T1,
+        "t2":   UC_MIPS_REG_T2,
+        "t3":   UC_MIPS_REG_T3,
+        "t4":   UC_MIPS_REG_T4,
+        "t5":   UC_MIPS_REG_T5,
+        "t6":   UC_MIPS_REG_T6,
+        "t7":   UC_MIPS_REG_T7,
+        "s0":   UC_MIPS_REG_S0,
+        "s1":   UC_MIPS_REG_S1,
+        "s2":   UC_MIPS_REG_S2,
+        "s3":   UC_MIPS_REG_S3,
+        "s4":   UC_MIPS_REG_S4,
+        "s5":   UC_MIPS_REG_S5,
+        "s6":   UC_MIPS_REG_S6,
+        "s7":   UC_MIPS_REG_S7,
+        "t8":   UC_MIPS_REG_T8,
+        "t9":   UC_MIPS_REG_T9,
+        "k0":   UC_MIPS_REG_K0,
+        "k1":   UC_MIPS_REG_K1,
+        "gp":   UC_MIPS_REG_GP,
+        "sp":   UC_MIPS_REG_SP,
+        "fp":   UC_MIPS_REG_FP,
+        "ra":   UC_MIPS_REG_RA,
+        "pc":   UC_MIPS_REG_PC,
+        "hi":   UC_MIPS_REG_HI,
+        "lo":   UC_MIPS_REG_LO,
+    },
 }
 
 # regFmt - Format register for output
@@ -229,6 +267,18 @@ def regFmt(mu, regType, regSize, regName):
         return
     outRegText = f"{outRegColor}{outRegValFmt}{cEnd}"
     return outRegText
+
+def printRegs_mips32(mu, sConfig):
+    print(f"{cRegN} zero: {regFmt(mu,0,32,rNames['mips32']['zero' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['at' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['v0' ])} {cRegN}  v1: {regFmt(mu,0,32,rNames['mips32']['v1' ])}")
+    print(f"{cRegN} a0: {regFmt(mu,0,32,rNames['mips32']['a0' ])} {cRegN}  a1: {regFmt(mu,0,32,rNames['mips32']['a1' ])} {cRegN}  a2: {regFmt(mu,0,32,rNames['mips32']['a2' ])} {cRegN}  a3: {regFmt(mu,0,32,rNames['mips32']['a3' ])}")
+    print(f"{cRegN} t0: {regFmt(mu,0,32,rNames['mips32']['t0' ])} {cRegN}  t1: {regFmt(mu,0,32,rNames['mips32']['t1' ])} {cRegN} t2: {regFmt(mu,0,32,rNames['mips32']['t2'])} {cRegN} t3: {regFmt(mu,0,32,rNames['mips32']['t3'])}")
+    print(f"{cRegN}t4: {regFmt(mu,0,32,rNames['mips32']['t4'])} {cRegN} t5: {regFmt(mu,0,32,rNames['mips32']['t5'])} {cRegN} t6: {regFmt(mu,0,32,rNames['mips32']['t6'])} {cRegN} t7: {regFmt(mu,0,32,rNames['mips32']['t7'])}")
+    print(f"{cRegN}s0: {regFmt(mu,0,32,rNames['mips32']['s0'])} {cRegN} s1: {regFmt(mu,0,32,rNames['mips32']['s1'])} {cRegN} s2: {regFmt(mu,0,32,rNames['mips32']['s2'])} {cRegN} s3: {regFmt(mu,0,32,rNames['mips32']['s3'])}")
+    print(f"{cRegN}s4: {regFmt(mu,0,32,rNames['mips32']['s4'])} {cRegN} s5: {regFmt(mu,0,32,rNames['mips32']['s5'])} {cRegN} s6: {regFmt(mu,0,32,rNames['mips32']['s6'])} {cRegN} s7: {regFmt(mu,0,32,rNames['mips32']['s7'])}")
+    print(f"{cRegN}t8: {regFmt(mu,0,32,rNames['mips32']['t8'])} {cRegN} t9: {regFmt(mu,0,32,rNames['mips32']['t9'])} {cRegN} k0: {regFmt(mu,0,32,rNames['mips32']['k0'])} {cRegN} k1: {regFmt(mu,0,32,rNames['mips32']['k1'])}")
+    print(f"{cRegN}gp: {regFmt(mu,0,32,rNames['mips32']['gp'])} {cRegN} sp: {regFmt(mu,0,32,rNames['mips32']['sp'])} {cRegN} fp: {regFmt(mu,0,32,rNames['mips32']['fp'])} {cRegN}  ra: {regFmt(mu,2,32,rNames['mips32']['ra'] )}")
+    print(f"{cRegN}pc: {regFmt(mu,0,32,rNames['mips32']['pc'])}")
+    print(cEnd,end="")
 
 def printRegs_arm32(mu, sConfig):
     print(f"{cRegN}  r0: {regFmt(mu,0,32,rNames['arm32']['r0' ])} {cRegN} r1: {regFmt(mu,0,32,rNames['arm32']['r1' ])} {cRegN} r2: {regFmt(mu,0,32,rNames['arm32']['r2' ])} {cRegN} r3: {regFmt(mu,0,32,rNames['arm32']['r3' ])}")
@@ -395,6 +445,31 @@ archez = {
             "reg_state": printRegs_arm32,
         },
     },
+    "mips32": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_MIPS,
+                "mode": UC_MODE_MIPS32,
+                "stack_reg": UC_MIPS_REG_SP,
+                "ip_reg": UC_MIPS_REG_PC,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_MIPS,
+                "mode": KS_MODE_MIPS32,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_MIPS,
+                "mode": capstone.CS_MODE_MIPS32,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_mips32,
+        },
+    },
 }
 
 ### Helper Functions ###########################################################
@@ -448,6 +523,8 @@ def exportBin(inCode, fileType, fArch, fname):
             eMach = b"\x3e\x00"
         elif fArch == "arm64":
             eMach = b"\xb7\x00"
+        elif fArch == "mips32":
+            eMach = b"\x08\x00"
         else:
             print("Unsupported Arch!")
             return
@@ -467,6 +544,8 @@ def exportBin(inCode, fileType, fArch, fname):
             eMach = b"\x4c\x01"
         elif fArch == "x86":
             eMach = b"\x4c\x01"
+        elif fArch == "mips32":
+            eMach = b"\x66\x03"
         else:
             print("Unsupported Arch!")
             return
