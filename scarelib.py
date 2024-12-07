@@ -230,6 +230,38 @@ rNames = {
         "pc":   UC_MIPS_REG_PC,
         "hi":   UC_MIPS_REG_HI,
         "lo":   UC_MIPS_REG_LO,
+        "0":	UC_MIPS_REG_0,
+        "1":    UC_MIPS_REG_1,
+        "2":    UC_MIPS_REG_2,
+        "3":    UC_MIPS_REG_3,
+        "4":    UC_MIPS_REG_4,
+        "5":    UC_MIPS_REG_5,
+        "6":    UC_MIPS_REG_6,
+        "7":    UC_MIPS_REG_7,
+        "8":    UC_MIPS_REG_8,
+        "9":    UC_MIPS_REG_9,
+        "10":   UC_MIPS_REG_10,
+        "11":   UC_MIPS_REG_11,
+        "12":   UC_MIPS_REG_12,
+        "13":   UC_MIPS_REG_13,
+        "14":   UC_MIPS_REG_14,
+        "15":   UC_MIPS_REG_15,
+        "16":   UC_MIPS_REG_16,
+        "17":   UC_MIPS_REG_17,
+        "18":   UC_MIPS_REG_18,
+        "19":   UC_MIPS_REG_19,
+        "20":   UC_MIPS_REG_20,
+        "21":   UC_MIPS_REG_21,
+        "22":   UC_MIPS_REG_22,
+        "23":   UC_MIPS_REG_23,
+        "24":   UC_MIPS_REG_24,
+        "25":   UC_MIPS_REG_25,
+        "26":   UC_MIPS_REG_26,
+        "27":   UC_MIPS_REG_27,
+        "28":   UC_MIPS_REG_28,
+        "29":   UC_MIPS_REG_29,
+        "30":   UC_MIPS_REG_30,
+        "31":   UC_MIPS_REG_31,
     },
 }
 
@@ -269,7 +301,7 @@ def regFmt(mu, regType, regSize, regName):
     return outRegText
 
 def printRegs_mips32(mu, sConfig):
-    print(f"{cRegN} zero: {regFmt(mu,0,32,rNames['mips32']['zero' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['at' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['v0' ])} {cRegN}  v1: {regFmt(mu,0,32,rNames['mips32']['v1' ])}")
+    print(f"{cRegN} zero: {regFmt(mu,0,32,rNames['mips32']['zero' ])} {cRegN}  at: {regFmt(mu,0,32,rNames['mips32']['at' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['v0' ])} {cRegN}  v1: {regFmt(mu,0,32,rNames['mips32']['v1' ])}")
     print(f"{cRegN} a0: {regFmt(mu,0,32,rNames['mips32']['a0' ])} {cRegN}  a1: {regFmt(mu,0,32,rNames['mips32']['a1' ])} {cRegN}  a2: {regFmt(mu,0,32,rNames['mips32']['a2' ])} {cRegN}  a3: {regFmt(mu,0,32,rNames['mips32']['a3' ])}")
     print(f"{cRegN} t0: {regFmt(mu,0,32,rNames['mips32']['t0' ])} {cRegN}  t1: {regFmt(mu,0,32,rNames['mips32']['t1' ])} {cRegN} t2: {regFmt(mu,0,32,rNames['mips32']['t2'])} {cRegN} t3: {regFmt(mu,0,32,rNames['mips32']['t3'])}")
     print(f"{cRegN}t4: {regFmt(mu,0,32,rNames['mips32']['t4'])} {cRegN} t5: {regFmt(mu,0,32,rNames['mips32']['t5'])} {cRegN} t6: {regFmt(mu,0,32,rNames['mips32']['t6'])} {cRegN} t7: {regFmt(mu,0,32,rNames['mips32']['t7'])}")
