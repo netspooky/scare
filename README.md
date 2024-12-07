@@ -17,6 +17,7 @@ Currently Supported Architectures
 - x64
 - arm32
 - arm64
+- mips32
 
 Requirements
 - python3
