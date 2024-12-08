@@ -5,6 +5,7 @@ from unicorn.x86_const import *
 from unicorn.arm64_const import *
 from unicorn.arm_const import *
 from unicorn.mips_const import *
+from unicorn.ppc_const import *
 from keystone import *
 import capstone
 from scareconfig import *
@@ -264,6 +265,80 @@ rNames = {
         "30":   UC_MIPS_REG_30,
         "31":   UC_MIPS_REG_31,
     },
+    "ppc": {
+        "r0" :   UC_PPC_REG_0,
+        "r1" :   UC_PPC_REG_1,
+        "r2" :   UC_PPC_REG_2,
+        "r3" :   UC_PPC_REG_3,
+        "r4" :   UC_PPC_REG_4,
+        "r5" :   UC_PPC_REG_5,
+        "r6" :   UC_PPC_REG_6,
+        "r7" :   UC_PPC_REG_7,
+        "r8" :   UC_PPC_REG_8,
+        "r9" :   UC_PPC_REG_9,
+        "r10":   UC_PPC_REG_10,
+        "r11":   UC_PPC_REG_11,
+        "r12":   UC_PPC_REG_12,
+        "r13":   UC_PPC_REG_13,
+        "r14":   UC_PPC_REG_14,
+        "r15":   UC_PPC_REG_15,
+        "r16":   UC_PPC_REG_16,
+        "r17":   UC_PPC_REG_17,
+        "r18":   UC_PPC_REG_18,
+        "r19":   UC_PPC_REG_19,
+        "r20":   UC_PPC_REG_20,
+        "r21":   UC_PPC_REG_21,
+        "r22":   UC_PPC_REG_22,
+        "r23":   UC_PPC_REG_23,
+        "r24":   UC_PPC_REG_24,
+        "r25":   UC_PPC_REG_25,
+        "r26":   UC_PPC_REG_26,
+        "r27":   UC_PPC_REG_27,
+        "r28":   UC_PPC_REG_28,
+        "r29":   UC_PPC_REG_29,
+        "r30":   UC_PPC_REG_30,
+        
+        "pc":    UC_PPC_REG_PC,
+        "cr":    UC_PPC_REG_CR,
+        "lr":    UC_PPC_REG_LR,
+
+        "xer":   UC_PPC_REG_XER,
+        "ctr":   UC_PPC_REG_CTR,
+        "msr":   UC_PPC_REG_MSR,
+        "fpscr": UC_PPC_REG_FPSCR,
+
+        "fpr0" : UC_PPC_REG_FPR0,
+        "fpr1" : UC_PPC_REG_FPR1,
+        "fpr2" : UC_PPC_REG_FPR2,
+        "fpr3" : UC_PPC_REG_FPR3,
+        "fpr4" : UC_PPC_REG_FPR4,
+        "fpr5" : UC_PPC_REG_FPR5,
+        "fpr6" : UC_PPC_REG_FPR6,
+        "fpr7" : UC_PPC_REG_FPR7,
+        "fpr8" : UC_PPC_REG_FPR8,
+        "fpr9" : UC_PPC_REG_FPR9,
+        "fpr10": UC_PPC_REG_FPR10,
+        "fpr11": UC_PPC_REG_FPR11,
+        "fpr12": UC_PPC_REG_FPR12,
+        "fpr13": UC_PPC_REG_FPR13,
+        "fpr14": UC_PPC_REG_FPR14,
+        "fpr15": UC_PPC_REG_FPR15,
+        "fpr16": UC_PPC_REG_FPR16,
+        "fpr17": UC_PPC_REG_FPR17,
+        "fpr18": UC_PPC_REG_FPR18,
+        "fpr19": UC_PPC_REG_FPR19,
+        "fpr20": UC_PPC_REG_FPR20,
+        "fpr21": UC_PPC_REG_FPR21,
+        "fpr22": UC_PPC_REG_FPR22,
+        "fpr23": UC_PPC_REG_FPR23,
+        "fpr24": UC_PPC_REG_FPR24,
+        "fpr25": UC_PPC_REG_FPR25,
+        "fpr26": UC_PPC_REG_FPR26,
+        "fpr27": UC_PPC_REG_FPR27,
+        "fpr28": UC_PPC_REG_FPR28,
+        "fpr29": UC_PPC_REG_FPR29,
+        "fpr30": UC_PPC_REG_FPR30,
+    },
 }
 
 # regFmt - Format register for output
@@ -302,15 +377,15 @@ def regFmt(mu, regType, regSize, regName):
     return outRegText
 
 def printRegs_mips32(mu, sConfig):
-    print(f"{cRegN} zero: {regFmt(mu,0,32,rNames['mips32']['zero' ])} {cRegN}  at: {regFmt(mu,0,32,rNames['mips32']['at' ])} {cRegN}  v0: {regFmt(mu,0,32,rNames['mips32']['v0' ])} {cRegN}  v1: {regFmt(mu,0,32,rNames['mips32']['v1' ])}")
-    print(f"{cRegN} a0: {regFmt(mu,0,32,rNames['mips32']['a0' ])} {cRegN}  a1: {regFmt(mu,0,32,rNames['mips32']['a1' ])} {cRegN}  a2: {regFmt(mu,0,32,rNames['mips32']['a2' ])} {cRegN}  a3: {regFmt(mu,0,32,rNames['mips32']['a3' ])}")
-    print(f"{cRegN} t0: {regFmt(mu,0,32,rNames['mips32']['t0' ])} {cRegN}  t1: {regFmt(mu,0,32,rNames['mips32']['t1' ])} {cRegN} t2: {regFmt(mu,0,32,rNames['mips32']['t2'])} {cRegN} t3: {regFmt(mu,0,32,rNames['mips32']['t3'])}")
-    print(f"{cRegN}t4: {regFmt(mu,0,32,rNames['mips32']['t4'])} {cRegN} t5: {regFmt(mu,0,32,rNames['mips32']['t5'])} {cRegN} t6: {regFmt(mu,0,32,rNames['mips32']['t6'])} {cRegN} t7: {regFmt(mu,0,32,rNames['mips32']['t7'])}")
-    print(f"{cRegN}s0: {regFmt(mu,0,32,rNames['mips32']['s0'])} {cRegN} s1: {regFmt(mu,0,32,rNames['mips32']['s1'])} {cRegN} s2: {regFmt(mu,0,32,rNames['mips32']['s2'])} {cRegN} s3: {regFmt(mu,0,32,rNames['mips32']['s3'])}")
-    print(f"{cRegN}s4: {regFmt(mu,0,32,rNames['mips32']['s4'])} {cRegN} s5: {regFmt(mu,0,32,rNames['mips32']['s5'])} {cRegN} s6: {regFmt(mu,0,32,rNames['mips32']['s6'])} {cRegN} s7: {regFmt(mu,0,32,rNames['mips32']['s7'])}")
-    print(f"{cRegN}t8: {regFmt(mu,0,32,rNames['mips32']['t8'])} {cRegN} t9: {regFmt(mu,0,32,rNames['mips32']['t9'])} {cRegN} k0: {regFmt(mu,0,32,rNames['mips32']['k0'])} {cRegN} k1: {regFmt(mu,0,32,rNames['mips32']['k1'])}")
-    print(f"{cRegN}gp: {regFmt(mu,0,32,rNames['mips32']['gp'])} {cRegN} sp: {regFmt(mu,0,32,rNames['mips32']['sp'])} {cRegN} fp: {regFmt(mu,0,32,rNames['mips32']['fp'])} {cRegN}  ra: {regFmt(mu,2,32,rNames['mips32']['ra'] )}")
-    print(f"{cRegN}pc: {regFmt(mu,0,32,rNames['mips32']['pc'])}")
+    print(f"{cRegN}zero: {regFmt(mu,0,32,rNames['mips32']['zero'])} {cRegN}      at: {regFmt(mu,0,32,rNames['mips32']['at'])} {cRegN}   v0: {regFmt(mu,0,32,rNames['mips32']['v0'])} {cRegN}  v1: {regFmt(mu,0,32,rNames['mips32']['v1'])}")
+    print(f"{cRegN}  a0: {regFmt(mu,0,32,rNames['mips32']['a0'])} {cRegN}      a1: {regFmt(mu,0,32,rNames['mips32']['a1'])} {cRegN}   a2: {regFmt(mu,0,32,rNames['mips32']['a2'])} {cRegN}  a3: {regFmt(mu,0,32,rNames['mips32']['a3'])}")
+    print(f"{cRegN}  t0: {regFmt(mu,0,32,rNames['mips32']['t0'])} {cRegN}      t1: {regFmt(mu,0,32,rNames['mips32']['t1'])} {cRegN}   t2: {regFmt(mu,0,32,rNames['mips32']['t2'])} {cRegN}  t3: {regFmt(mu,0,32,rNames['mips32']['t3'])}")
+    print(f"{cRegN}  t4: {regFmt(mu,0,32,rNames['mips32']['t4'])} {cRegN}      t5: {regFmt(mu,0,32,rNames['mips32']['t5'])} {cRegN}   t6: {regFmt(mu,0,32,rNames['mips32']['t6'])} {cRegN}  t7: {regFmt(mu,0,32,rNames['mips32']['t7'])}")
+    print(f"{cRegN}  s0: {regFmt(mu,0,32,rNames['mips32']['s0'])} {cRegN}      s1: {regFmt(mu,0,32,rNames['mips32']['s1'])} {cRegN}   s2: {regFmt(mu,0,32,rNames['mips32']['s2'])} {cRegN}  s3: {regFmt(mu,0,32,rNames['mips32']['s3'])}")
+    print(f"{cRegN}  s4: {regFmt(mu,0,32,rNames['mips32']['s4'])} {cRegN}      s5: {regFmt(mu,0,32,rNames['mips32']['s5'])} {cRegN}   s6: {regFmt(mu,0,32,rNames['mips32']['s6'])} {cRegN}  s7: {regFmt(mu,0,32,rNames['mips32']['s7'])}")
+    print(f"{cRegN}  t8: {regFmt(mu,0,32,rNames['mips32']['t8'])} {cRegN}      t9: {regFmt(mu,0,32,rNames['mips32']['t9'])} {cRegN}   k0: {regFmt(mu,0,32,rNames['mips32']['k0'])} {cRegN}  k1: {regFmt(mu,0,32,rNames['mips32']['k1'])}")
+    print(f"{cRegN}  gp: {regFmt(mu,0,32,rNames['mips32']['gp'])} {cRegN}      sp: {regFmt(mu,0,32,rNames['mips32']['sp'])} {cRegN}   fp: {regFmt(mu,0,32,rNames['mips32']['fp'])} {cRegN}  ra: {regFmt(mu,2,32,rNames['mips32']['ra'] )}")
+    print(f"{cRegN}  pc: {regFmt(mu,0,32,rNames['mips32']['pc'])}")
     print(cEnd,end="")
 
 def printRegs_arm32(mu, sConfig):
@@ -376,6 +451,32 @@ def printRegs_x64(mu, sConfig):
     print(cEnd,end="")
     if sConfig["x86/xmm"]:
         printRegs_XMM(mu, sConfig)
+
+def printRegs_ppc_fpr(mu, sConfig):
+    print(f"{cRegN}  fpr0: {regFmt(mu,0,64,rNames['ppc']['fpr0' ])} {cRegN}   fpr1: {regFmt(mu,0,64,rNames['ppc']['fpr1' ])} {cRegN}  fpr2: {regFmt(mu,0,64,rNames['ppc']['fpr2' ])} {cRegN}  fpr3: {regFmt(mu,0,64,rNames['ppc']['fpr3' ])}")
+    print(f"{cRegN}  fpr4: {regFmt(mu,0,64,rNames['ppc']['fpr4' ])} {cRegN}   fpr5: {regFmt(mu,0,64,rNames['ppc']['fpr5' ])} {cRegN}  fpr6: {regFmt(mu,0,64,rNames['ppc']['fpr6' ])} {cRegN}  fpr7: {regFmt(mu,0,64,rNames['ppc']['fpr7' ])}")
+    print(f"{cRegN}  fpr8: {regFmt(mu,0,64,rNames['ppc']['fpr8' ])} {cRegN}   fpr9: {regFmt(mu,0,64,rNames['ppc']['fpr9' ])} {cRegN} fpr10: {regFmt(mu,0,64,rNames['ppc']['fpr10'])} {cRegN} fpr11: {regFmt(mu,0,64,rNames['ppc']['fpr11'])}")
+    print(f"{cRegN} fpr12: {regFmt(mu,0,64,rNames['ppc']['fpr12'])} {cRegN}  fpr13: {regFmt(mu,0,64,rNames['ppc']['fpr13'])} {cRegN} fpr14: {regFmt(mu,0,64,rNames['ppc']['fpr14'])} {cRegN} fpr15: {regFmt(mu,0,64,rNames['ppc']['fpr15'])}")
+    print(f"{cRegN} fpr16: {regFmt(mu,0,64,rNames['ppc']['fpr16'])} {cRegN}  fpr17: {regFmt(mu,0,64,rNames['ppc']['fpr17'])} {cRegN} fpr18: {regFmt(mu,0,64,rNames['ppc']['fpr18'])} {cRegN} fpr19: {regFmt(mu,0,64,rNames['ppc']['fpr19'])}")
+    print(f"{cRegN} fpr20: {regFmt(mu,0,64,rNames['ppc']['fpr20'])} {cRegN}  fpr21: {regFmt(mu,0,64,rNames['ppc']['fpr21'])} {cRegN} fpr22: {regFmt(mu,0,64,rNames['ppc']['fpr22'])} {cRegN} fpr23: {regFmt(mu,0,64,rNames['ppc']['fpr23'])}")
+    print(f"{cRegN} fpr24: {regFmt(mu,0,64,rNames['ppc']['fpr24'])} {cRegN}  fpr25: {regFmt(mu,0,64,rNames['ppc']['fpr25'])} {cRegN} fpr26: {regFmt(mu,0,64,rNames['ppc']['fpr26'])} {cRegN} fpr27: {regFmt(mu,0,64,rNames['ppc']['fpr27'])}")
+    print(f"{cRegN} fpr28: {regFmt(mu,0,64,rNames['ppc']['fpr28'])} {cRegN}  fpr29: {regFmt(mu,0,64,rNames['ppc']['fpr29'])} {cRegN} fpr30: {regFmt(mu,0,64,rNames['ppc']['fpr30'])}")
+    print(cEnd,end="")
+
+def printRegs_ppc(mu, sConfig):
+    print(f"{cRegN}    r0: {regFmt(mu,0,64,rNames['ppc']['r0'])} {cRegN}     r1: {regFmt(mu,0,64,rNames['ppc']['r1'])} {cRegN}    r2: {regFmt(mu,0,64,rNames['ppc']['r2'])} {cRegN}    r3: {regFmt(mu,0,64,rNames['ppc']['r3'])}")
+    print(f"{cRegN}    r4: {regFmt(mu,0,64,rNames['ppc']['r4'])} {cRegN}     r5: {regFmt(mu,0,64,rNames['ppc']['r5'])} {cRegN}    r6: {regFmt(mu,0,64,rNames['ppc']['r6'])} {cRegN}    r7: {regFmt(mu,0,64,rNames['ppc']['r7'])}")
+    print(f"{cRegN}    r8: {regFmt(mu,0,64,rNames['ppc']['r8'])} {cRegN}     r9: {regFmt(mu,0,64,rNames['ppc']['r9'])} {cRegN}   r10: {regFmt(mu,0,64,rNames['ppc']['r10'])} {cRegN}   r11: {regFmt(mu,0,64,rNames['ppc']['r11'])}")
+    print(f"{cRegN}   r12: {regFmt(mu,0,64,rNames['ppc']['r12'])} {cRegN}    r13: {regFmt(mu,0,64,rNames['ppc']['r13'])} {cRegN}   r14: {regFmt(mu,0,64,rNames['ppc']['r14'])} {cRegN}   r15: {regFmt(mu,0,64,rNames['ppc']['r15'])}")
+    print(f"{cRegN}   r16: {regFmt(mu,0,64,rNames['ppc']['r16'])} {cRegN}    r17: {regFmt(mu,0,64,rNames['ppc']['r17'])} {cRegN}   r18: {regFmt(mu,0,64,rNames['ppc']['r18'])} {cRegN}   r19: {regFmt(mu,0,64,rNames['ppc']['r19'])}")
+    print(f"{cRegN}   r20: {regFmt(mu,0,64,rNames['ppc']['r20'])} {cRegN}    r21: {regFmt(mu,0,64,rNames['ppc']['r21'])} {cRegN}   r22: {regFmt(mu,0,64,rNames['ppc']['r22'])} {cRegN}   r23: {regFmt(mu,0,64,rNames['ppc']['r23'])}")
+    print(f"{cRegN}   r24: {regFmt(mu,0,64,rNames['ppc']['r24'])} {cRegN}    r25: {regFmt(mu,0,64,rNames['ppc']['r25'])} {cRegN}   r26: {regFmt(mu,0,64,rNames['ppc']['r26'])} {cRegN}   r27: {regFmt(mu,0,64,rNames['ppc']['r27'])}")
+    print(f"{cRegN}   r28: {regFmt(mu,0,64,rNames['ppc']['r28'])} {cRegN}    r29: {regFmt(mu,0,64,rNames['ppc']['r29'])} {cRegN}   r30: {regFmt(mu,0,64,rNames['ppc']['r30'])} {cRegN}    pc: {regFmt(mu,1,64,rNames['ppc']['pc'] )}")
+    print(f"{cRegN}    cr: {regFmt(mu,0,64,rNames['ppc']['cr'])}  {cRegN}    lr: {regFmt(mu,0,64,rNames['ppc']['lr'])}  {cRegN}  ctr: {regFmt(mu,0,64,rNames['ppc']['ctr'])} {cRegN}   xer: {regFmt(mu,0,64,rNames['ppc']['xer'])}")
+    print(f"{cRegN} fpscr: {regFmt(mu,0,64,rNames['ppc']['fpscr'])}")
+    print(cEnd,end="")
+    if sConfig["ppc/fpr"]:
+        printRegs_ppc_fpr(mu, sConfig)
 
 archez = {
     "x64": {
@@ -501,6 +602,31 @@ archez = {
         },
         "funcs": {
             "reg_state": printRegs_mips32,
+        },
+    },
+    "ppc": {
+        "emu": {
+            "unicorn": {
+                "arch": UC_ARCH_PPC,
+                "mode": UC_MODE_PPC32 | UC_MODE_BIG_ENDIAN,
+                "stack_reg": UC_PPC_REG_1,
+                "ip_reg": UC_PPC_REG_PC,
+            },
+        },
+        "asm": {
+            "keystone": {
+                "arch": KS_ARCH_PPC,
+                "mode": KS_MODE_PPC32 + KS_MODE_BIG_ENDIAN,
+            },
+        },
+        "dis": {
+            "capstone": {
+                "arch": capstone.CS_ARCH_PPC,
+                "mode": capstone.CS_MODE_32,
+            },
+        },
+        "funcs": {
+            "reg_state": printRegs_ppc,
         },
     },
 }
